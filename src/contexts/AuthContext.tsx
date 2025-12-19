@@ -24,8 +24,8 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; user?: User }>;
+  signup: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string; user?: User }>;
   logout: () => void;
   getAllUsers: () => Promise<User[]>;
   updateUserRole: (userId: string, newRole: UserRole) => Promise<boolean>;
@@ -82,7 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initAuth();
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> => {
     // Validate inputs
     const emailValidation = emailSchema.safeParse(email);
     if (!emailValidation.success) {
@@ -98,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const mappedUser = mapApiUserToUser(apiUser);
       setUser(mappedUser);
       localStorage.setItem(USER_CACHE_KEY, JSON.stringify(mappedUser));
-      return { success: true };
+      return { success: true, user: mappedUser };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Login failed' };
     }
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string,
     name: string
-  ): Promise<{ success: boolean; error?: string }> => {
+  ): Promise<{ success: boolean; error?: string; user?: User }> => {
     // Validate all inputs
     const emailValidation = emailSchema.safeParse(email);
     if (!emailValidation.success) {
@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const mappedUser = mapApiUserToUser(apiUser);
       setUser(mappedUser);
       localStorage.setItem(USER_CACHE_KEY, JSON.stringify(mappedUser));
-      return { success: true };
+      return { success: true, user: mappedUser };
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : 'Signup failed' };
     }
