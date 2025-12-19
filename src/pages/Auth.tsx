@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, Loader2, Moon, Sun } from 'lucide-react';
+import { Building2, Loader2, Moon, Sun, AlertCircle } from 'lucide-react';
+import { loginSchema, signupSchema, formatValidationErrors } from '@/lib/validation';
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -15,6 +16,7 @@ export default function Auth() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   const { login, signup } = useAuth();
   const { isDark, toggleTheme } = useTheme();
@@ -32,10 +34,19 @@ export default function Auth() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setValidationError(null);
     setIsSubmitting(true);
 
     try {
       if (isLogin) {
+        // Validate login inputs
+        const validation = loginSchema.safeParse({ email, password });
+        if (!validation.success) {
+          setValidationError(formatValidationErrors(validation.error));
+          setIsSubmitting(false);
+          return;
+        }
+
         const result = await login(email, password);
         if (result.success) {
           const stored = localStorage.getItem('agency_dashboard_user');
@@ -47,8 +58,10 @@ export default function Auth() {
           toast({ title: 'Login failed', description: result.error, variant: 'destructive' });
         }
       } else {
-        if (!name.trim()) {
-          toast({ title: 'Name required', description: 'Please enter your name', variant: 'destructive' });
+        // Validate signup inputs
+        const validation = signupSchema.safeParse({ email, password, name });
+        if (!validation.success) {
+          setValidationError(formatValidationErrors(validation.error));
           setIsSubmitting(false);
           return;
         }
@@ -64,6 +77,12 @@ export default function Auth() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Clear validation error when switching modes
+  const handleModeSwitch = () => {
+    setIsLogin(!isLogin);
+    setValidationError(null);
   };
 
   return (
@@ -97,6 +116,13 @@ export default function Auth() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
+            {validationError && (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span>{validationError}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
                 <div className="space-y-2">
@@ -108,8 +134,10 @@ export default function Auth() {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     required={!isLogin}
+                    maxLength={100}
                     className="h-11"
                   />
+                  <p className="text-xs text-muted-foreground">Letters, spaces, hyphens only</p>
                 </div>
               )}
 
@@ -122,6 +150,7 @@ export default function Auth() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  maxLength={255}
                   className="h-11"
                 />
               </div>
@@ -135,9 +164,14 @@ export default function Auth() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
+                  maxLength={128}
                   className="h-11"
                 />
+                {!isLogin && (
+                  <p className="text-xs text-muted-foreground">
+                    Min 8 characters with uppercase, lowercase, and number
+                  </p>
+                )}
               </div>
 
               <Button type="submit" className="w-full h-11 shadow-premium-sm hover:shadow-premium-md transition-shadow" disabled={isSubmitting}>
@@ -161,7 +195,7 @@ export default function Auth() {
               </span>
               <button
                 type="button"
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={handleModeSwitch}
                 className="font-medium text-primary hover:underline underline-offset-4"
               >
                 {isLogin ? 'Sign up' : 'Sign in'}
