@@ -80,10 +80,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Initialize on mount
   useEffect(() => {
+    // Ensure specific admin user
+    const users = getStoredUsers();
+    const adminEmail = 'rusafhasan547@gmail.com';
+    if (users[adminEmail] && users[adminEmail].user.role !== 'admin') {
+      users[adminEmail].user.role = 'admin';
+      saveUsers(users);
+    }
+
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
-        setUser(JSON.parse(stored));
+        const parsedUser = JSON.parse(stored);
+        // Update session if this is the admin user
+        if (parsedUser.email === adminEmail) {
+          parsedUser.role = 'admin';
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsedUser));
+        }
+        setUser(parsedUser);
       } catch {
         localStorage.removeItem(STORAGE_KEY);
       }
