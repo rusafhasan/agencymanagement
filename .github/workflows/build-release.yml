@@ -3,6 +3,7 @@ name: Build and Release
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -37,8 +38,16 @@ jobs:
           cd dist
           zip -r ../agency-dashboard.zip .
 
+      - name: Upload ZIP as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: agency-dashboard
+          path: agency-dashboard.zip
+          if-no-files-found: error
+
       - name: Upload ZIP to Release
-        uses: softprops/action-gh-release@v1
+        if: ${{ github.event_name == 'release' }}
+        uses: softprops/action-gh-release@v2
         with:
           files: agency-dashboard.zip
         env:
