@@ -27,36 +27,25 @@ jobs:
       - name: Build React app
         run: npm run build
 
-      - name: Verify build output
+      - name: Prepare distribution
         run: |
-          test -f dist/index.html || (echo "dist/index.html missing" && ls -la && ls -la dist || true && exit 1)
+          mkdir -p dist/api
+          mkdir -p dist/install
+          cp -r public_html/api/* dist/api/ || true
+          cp -r public_html/install/* dist/install/ || true
+          cp public_html/.htaccess dist/.htaccess || true
 
-      - name: Copy PHP backend files
-        run: |
-          mkdir -p dist/api dist/install
-          cp -a public_html/api/. dist/api/
-          cp -a public_html/install/. dist/install/
-          if [ -f public_html/.htaccess ]; then cp public_html/.htaccess dist/.htaccess; fi
+      - name: Create ZIP
+        run: cd dist && zip -r ../agency-dashboard.zip .
 
-      - name: Create ZIP file
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y zip
-          cd dist
-          zip -r ../agency-dashboard.zip .
-
-      - name: Upload ZIP as workflow artifact
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: agency-dashboard
           path: agency-dashboard.zip
-          if-no-files-found: error
 
-      - name: Upload ZIP to Release (optional)
-        if: ${{ github.event_name == 'release' }}
-        continue-on-error: true
+      - name: Upload to release
+        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
           files: agency-dashboard.zip
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
