@@ -3,14 +3,18 @@ import { Task, TaskStatus, useProjectManagement } from '@/contexts/ProjectManage
 import { useAuth } from '@/contexts/AuthContext';
 import KanbanColumn from './KanbanColumn';
 import TaskDetailModal from './TaskDetailModal';
+import TaskListView from './TaskListView';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, X } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Plus, X, LayoutGrid, List } from 'lucide-react';
 
 interface KanbanBoardProps {
   projectId: string;
   readOnly?: boolean;
 }
+
+type ViewMode = 'board' | 'list';
 
 const COLUMNS: { status: TaskStatus; title: string }[] = [
   { status: 'not-started', title: 'Not Started' },
@@ -23,6 +27,7 @@ export default function KanbanBoard({ projectId, readOnly = false }: KanbanBoard
   const { user } = useAuth();
   const { getTasksForProject, createTask, moveTask, getCommentsForTask, getEmployees } = useProjectManagement();
   
+  const [viewMode, setViewMode] = useState<ViewMode>('board');
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isAddingTask, setIsAddingTask] = useState(false);
@@ -80,53 +85,97 @@ export default function KanbanBoard({ projectId, readOnly = false }: KanbanBoard
 
   return (
     <div className="space-y-6">
-      {/* Add Task Button */}
-      {canCreateTask && !readOnly && (
-        <div className="animate-fade-in">
-          {isAddingTask ? (
-            <div className="flex gap-3 max-w-md">
-              <Input
-                placeholder="Enter task title..."
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
-                autoFocus
-                className="flex-1"
-              />
-              <Button onClick={handleAddTask} disabled={!newTaskTitle.trim()}>
+      {/* Header Controls */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in">
+        {/* Add Task Button */}
+        {canCreateTask && !readOnly && (
+          <div>
+            {isAddingTask ? (
+              <div className="flex gap-3 max-w-md">
+                <Input
+                  placeholder="Enter task title..."
+                  value={newTaskTitle}
+                  onChange={(e) => setNewTaskTitle(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
+                  autoFocus
+                  className="flex-1"
+                />
+                <Button onClick={handleAddTask} disabled={!newTaskTitle.trim()}>
+                  Add Task
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => { setIsAddingTask(false); setNewTaskTitle(''); }}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <Button onClick={() => setIsAddingTask(true)} className="gap-2 shadow-premium-sm hover:shadow-premium-md transition-shadow">
+                <Plus className="h-4 w-4" />
                 Add Task
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => { setIsAddingTask(false); setNewTaskTitle(''); }}>
-                <X className="h-4 w-4" />
-              </Button>
+            )}
+          </div>
+        )}
+
+        {/* View Mode Toggle */}
+        <ToggleGroup 
+          type="single" 
+          value={viewMode} 
+          onValueChange={(value) => value && setViewMode(value as ViewMode)}
+          className="bg-muted/50 p-1 rounded-lg"
+        >
+          <ToggleGroupItem 
+            value="board" 
+            aria-label="Board view"
+            className="gap-2 data-[state=on]:bg-background data-[state=on]:shadow-sm"
+          >
+            <LayoutGrid className="h-4 w-4" />
+            <span className="hidden sm:inline">Board</span>
+          </ToggleGroupItem>
+          <ToggleGroupItem 
+            value="list" 
+            aria-label="List view"
+            className="gap-2 data-[state=on]:bg-background data-[state=on]:shadow-sm"
+          >
+            <List className="h-4 w-4" />
+            <span className="hidden sm:inline">List</span>
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+
+      {/* Board View */}
+      {viewMode === 'board' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          {COLUMNS.map((column, i) => (
+            <div key={column.status} className="animate-fade-in" style={{ animationDelay: `${0.1 + i * 0.05}s` }}>
+              <KanbanColumn
+                title={column.title}
+                status={column.status}
+                tasks={getTasksByStatus(column.status)}
+                employees={employees}
+                onTaskClick={setSelectedTask}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+                draggedTaskId={draggedTask?.id || null}
+              />
             </div>
-          ) : (
-            <Button onClick={() => setIsAddingTask(true)} className="gap-2 shadow-premium-sm hover:shadow-premium-md transition-shadow">
-              <Plus className="h-4 w-4" />
-              Add Task
-            </Button>
-          )}
+          ))}
         </div>
       )}
 
-      {/* Kanban Columns */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-        {COLUMNS.map((column, i) => (
-          <div key={column.status} className="animate-fade-in" style={{ animationDelay: `${0.1 + i * 0.05}s` }}>
-            <KanbanColumn
-              title={column.title}
-              status={column.status}
-              tasks={getTasksByStatus(column.status)}
-              employees={employees}
-              onTaskClick={setSelectedTask}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              draggedTaskId={draggedTask?.id || null}
-            />
-          </div>
-        ))}
-      </div>
+      {/* List View */}
+      {viewMode === 'list' && (
+        <div className="animate-fade-in">
+          <TaskListView
+            tasks={tasks}
+            employees={employees}
+            onTaskClick={setSelectedTask}
+            onDragStart={handleDragStart}
+            draggedTaskId={draggedTask?.id}
+            readOnly={readOnly}
+          />
+        </div>
+      )}
 
       {/* Task Detail Modal */}
       {selectedTask && (
