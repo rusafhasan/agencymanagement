@@ -45,8 +45,9 @@ jobs:
           path: agency-dashboard.zip
           if-no-files-found: error
 
-      - name: Upload ZIP to Release
+      - name: Upload ZIP to Release (optional)
         if: ${{ github.event_name == 'release' }}
+        continue-on-error: true
         uses: softprops/action-gh-release@v2
         with:
           files: agency-dashboard.zip
