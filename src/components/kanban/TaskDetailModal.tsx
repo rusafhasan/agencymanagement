@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Calendar, MessageSquare, Trash2, User as UserIcon, Send } from 'lucide-react';
+import { Calendar, MessageSquare, Trash2, Send } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
+import { MentionInput, renderCommentWithMentions } from '@/components/ui/mention-input';
 
 interface TaskDetailModalProps {
   task: Task;
@@ -210,18 +211,12 @@ export default function TaskDetailModal({
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 flex gap-2">
-                    <Textarea
-                      placeholder="Write a comment..."
+                    <MentionInput
                       value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      rows={2}
-                      className="flex-1 resize-none"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey && newComment.trim()) {
-                          e.preventDefault();
-                          handleAddComment();
-                        }
-                      }}
+                      onChange={setNewComment}
+                      onSubmit={handleAddComment}
+                      users={employees}
+                      placeholder="Write a comment... Use @ to mention"
                     />
                     <Button 
                       onClick={handleAddComment} 
@@ -254,7 +249,9 @@ export default function TaskDetailModal({
                             {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                           </span>
                         </div>
-                        <p className="text-sm text-foreground/90 bg-muted/50 rounded-lg p-3">{comment.content}</p>
+                        <div className="text-sm text-foreground/90 bg-muted/50 rounded-lg p-3">
+                          {renderCommentWithMentions(comment.content)}
+                        </div>
                       </div>
                     </div>
                   ))
