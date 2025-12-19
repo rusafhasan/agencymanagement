@@ -27,14 +27,21 @@ jobs:
       - name: Build React app
         run: npm run build
 
+      - name: Verify build output
+        run: |
+          test -f dist/index.html || (echo "dist/index.html missing" && ls -la && ls -la dist || true && exit 1)
+
       - name: Copy PHP backend files
         run: |
-          cp -r public_html/api dist/api
-          cp -r public_html/install dist/install
-          cp public_html/.htaccess dist/.htaccess
+          mkdir -p dist/api dist/install
+          cp -a public_html/api/. dist/api/
+          cp -a public_html/install/. dist/install/
+          if [ -f public_html/.htaccess ]; then cp public_html/.htaccess dist/.htaccess; fi
 
       - name: Create ZIP file
         run: |
+          sudo apt-get update
+          sudo apt-get install -y zip
           cd dist
           zip -r ../agency-dashboard.zip .
 
