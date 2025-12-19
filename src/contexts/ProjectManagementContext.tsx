@@ -55,6 +55,16 @@ export interface Payment {
   createdAt: string;
 }
 
+export interface Revenue {
+  id: string;
+  clientId: string;
+  projectId: string;
+  amount: number;
+  currency: Currency;
+  dateReceived: string;
+  createdAt: string;
+}
+
 interface ProjectManagementContextType {
   // Workspaces
   workspaces: Workspace[];
@@ -91,6 +101,13 @@ interface ProjectManagementContextType {
   deletePayment: (id: string) => void;
   getPaymentsForUser: () => Payment[];
 
+  // Revenue
+  revenues: Revenue[];
+  createRevenue: (clientId: string, projectId: string, amount: number, currency: Currency, dateReceived: string) => Revenue;
+  updateRevenue: (id: string, updates: Partial<Pick<Revenue, 'amount' | 'currency' | 'dateReceived'>>) => void;
+  deleteRevenue: (id: string) => void;
+  getAllRevenues: () => Revenue[];
+
   // Helpers
   getUsers: () => User[];
   getClients: () => User[];
@@ -105,6 +122,7 @@ const STORAGE_KEYS = {
   tasks: 'pm_tasks',
   comments: 'pm_comments',
   payments: 'pm_payments',
+  revenues: 'pm_revenues',
 };
 
 export function ProjectManagementProvider({ children }: { children: ReactNode }) {
@@ -114,7 +132,7 @@ export function ProjectManagementProvider({ children }: { children: ReactNode })
   const [tasks, setTasks] = useState<Task[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
-
+  const [revenues, setRevenues] = useState<Revenue[]>([]);
   // Load from localStorage on mount
   useEffect(() => {
     const stored = {
@@ -123,12 +141,14 @@ export function ProjectManagementProvider({ children }: { children: ReactNode })
       tasks: localStorage.getItem(STORAGE_KEYS.tasks),
       comments: localStorage.getItem(STORAGE_KEYS.comments),
       payments: localStorage.getItem(STORAGE_KEYS.payments),
+      revenues: localStorage.getItem(STORAGE_KEYS.revenues),
     };
     if (stored.workspaces) setWorkspaces(JSON.parse(stored.workspaces));
     if (stored.projects) setProjects(JSON.parse(stored.projects));
     if (stored.tasks) setTasks(JSON.parse(stored.tasks));
     if (stored.comments) setComments(JSON.parse(stored.comments));
     if (stored.payments) setPayments(JSON.parse(stored.payments));
+    if (stored.revenues) setRevenues(JSON.parse(stored.revenues));
   }, []);
 
   // Save to localStorage on changes
@@ -147,6 +167,9 @@ export function ProjectManagementProvider({ children }: { children: ReactNode })
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.payments, JSON.stringify(payments));
   }, [payments]);
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.revenues, JSON.stringify(revenues));
+  }, [revenues]);
 
   // Helper functions
   const getUsers = () => getAllUsers();
@@ -335,6 +358,34 @@ export function ProjectManagementProvider({ children }: { children: ReactNode })
     return []; // Clients can't see payments
   };
 
+  // Revenue functions
+  const createRevenue = (clientId: string, projectId: string, amount: number, currency: Currency, dateReceived: string): Revenue => {
+    const revenue: Revenue = {
+      id: crypto.randomUUID(),
+      clientId,
+      projectId,
+      amount,
+      currency,
+      dateReceived,
+      createdAt: new Date().toISOString(),
+    };
+    setRevenues(prev => [...prev, revenue]);
+    return revenue;
+  };
+
+  const updateRevenue = (id: string, updates: Partial<Pick<Revenue, 'amount' | 'currency' | 'dateReceived'>>) => {
+    setRevenues(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
+  };
+
+  const deleteRevenue = (id: string) => {
+    setRevenues(prev => prev.filter(r => r.id !== id));
+  };
+
+  const getAllRevenues = (): Revenue[] => {
+    if (!user || user.role !== 'admin') return [];
+    return revenues;
+  };
+
   return (
     <ProjectManagementContext.Provider value={{
       workspaces,
@@ -362,6 +413,11 @@ export function ProjectManagementProvider({ children }: { children: ReactNode })
       updatePayment,
       deletePayment,
       getPaymentsForUser,
+      revenues,
+      createRevenue,
+      updateRevenue,
+      deleteRevenue,
+      getAllRevenues,
       getUsers,
       getClients,
       getEmployees,

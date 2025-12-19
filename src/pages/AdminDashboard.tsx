@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Shield, Users, Briefcase, UserCheck, UserX, FolderKanban, DollarSign } from 'lucide-react';
+import { LogOut, Shield, Users, Briefcase, UserCheck, UserX, FolderKanban, DollarSign, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
@@ -152,6 +152,10 @@ export default function AdminDashboard() {
             <Button onClick={() => navigate('/payments')} variant="outline" className="gap-2">
               <DollarSign className="h-4 w-4" />
               Manage Payments
+            </Button>
+            <Button onClick={() => navigate('/revenue')} variant="outline" className="gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Revenue & Profit
             </Button>
           </CardContent>
         </Card>
