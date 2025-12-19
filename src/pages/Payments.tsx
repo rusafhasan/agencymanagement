@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjectManagement, Currency, PaymentStatus } from '@/contexts/ProjectManagementContext';
+import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,8 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, DollarSign, Trash2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Plus, DollarSign, Trash2, CreditCard, CheckCircle2, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 
 const CURRENCIES: Currency[] = ['USD', 'EUR', 'GBP', 'CAD', 'AUD'];
@@ -25,7 +25,6 @@ const CURRENCY_SYMBOLS: Record<Currency, string> = {
 
 export default function Payments() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { 
     getPaymentsForUser, 
     createPayment, 
@@ -99,57 +98,47 @@ export default function Payments() {
     .reduce((sum, p) => sum + p.amount, 0);
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <DollarSign className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="font-semibold">Payments</h1>
-              <p className="text-xs text-muted-foreground">
-                {isAdmin ? 'Manage employee payments' : 'View your payments'}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              {user?.name} ({user?.role})
-            </span>
-          </div>
-        </div>
-      </header>
+    <div className="page-container">
+      <AppHeader 
+        title="Payments" 
+        subtitle={isAdmin ? 'Manage employee payments' : 'View your payments'}
+        icon={<DollarSign className="h-5 w-5 text-primary-foreground" />}
+      />
 
-      <main className="container mx-auto p-6">
+      <main className="content-container">
         {/* Stats */}
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
-          <Card>
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-3 mb-8">
+          <Card className="card-premium hover-lift animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Payments</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                Total Payments
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{payments.length}</div>
+              <div className="text-3xl font-bold font-display">{payments.length}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="card-premium hover-lift animate-fade-in border-l-4 border-l-success" style={{ animationDelay: '0.15s' }}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-green-600">Total Paid</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-success" />
+                Total Paid
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">${totalPaid.toFixed(2)}</div>
+              <div className="text-3xl font-bold font-display text-success">${totalPaid.toFixed(2)}</div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="card-premium hover-lift animate-fade-in border-l-4 border-l-warning" style={{ animationDelay: '0.2s' }}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-amber-600">Total Unpaid</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <Clock className="h-4 w-4 text-warning" />
+                Total Unpaid
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-amber-600">${totalUnpaid.toFixed(2)}</div>
+              <div className="text-3xl font-bold font-display text-warning">${totalUnpaid.toFixed(2)}</div>
             </CardContent>
           </Card>
         </div>
@@ -158,16 +147,16 @@ export default function Payments() {
         {isAdmin && (
           <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="mb-4">
-                <Plus className="mr-2 h-4 w-4" />
+              <Button className="mb-6 gap-2 shadow-premium-sm hover:shadow-premium-md transition-shadow animate-fade-in" style={{ animationDelay: '0.25s' }}>
+                <Plus className="h-4 w-4" />
                 Create Payment
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Create New Payment</DialogTitle>
+                <DialogTitle className="font-display">Create New Payment</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
+              <div className="space-y-4 pt-2">
                 <div className="space-y-2">
                   <Label>Employee</Label>
                   <Select 
@@ -262,9 +251,9 @@ export default function Payments() {
         )}
 
         {/* Payments Table */}
-        <Card>
+        <Card className="card-premium animate-fade-in" style={{ animationDelay: '0.3s' }}>
           <CardHeader>
-            <CardTitle>Payment Records</CardTitle>
+            <CardTitle className="font-display">Payment Records</CardTitle>
             <CardDescription>
               {isAdmin 
                 ? 'All employee payment records' 
@@ -274,67 +263,72 @@ export default function Payments() {
           </CardHeader>
           <CardContent>
             {payments.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No payments found.</p>
+              <div className="text-center py-12">
+                <DollarSign className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                <p className="text-muted-foreground">No payments found.</p>
+              </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {isAdmin && <TableHead>Employee</TableHead>}
-                    <TableHead>Project</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    {isAdmin && <TableHead>Actions</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {payments.map((payment) => (
-                    <TableRow key={payment.id}>
-                      {isAdmin && (
-                        <TableCell className="font-medium">
-                          {getEmployeeName(payment.employeeId)}
-                        </TableCell>
-                      )}
-                      <TableCell>{getProjectName(payment.projectId)}</TableCell>
-                      <TableCell>
-                        {CURRENCY_SYMBOLS[payment.currency]}{payment.amount.toFixed(2)} {payment.currency}
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(payment.date), 'MMM d, yyyy')}
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={payment.status === 'paid' ? 'default' : 'secondary'}
-                          className={payment.status === 'paid' ? 'bg-green-600' : 'bg-amber-500'}
-                        >
-                          {payment.status === 'paid' ? 'Paid' : 'Unpaid'}
-                        </Badge>
-                      </TableCell>
-                      {isAdmin && (
-                        <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleToggleStatus(payment.id, payment.status)}
-                            >
-                              Mark as {payment.status === 'paid' ? 'Unpaid' : 'Paid'}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-destructive"
-                              onClick={() => handleDeletePayment(payment.id)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      )}
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      {isAdmin && <TableHead className="font-semibold">Employee</TableHead>}
+                      <TableHead className="font-semibold">Project</TableHead>
+                      <TableHead className="font-semibold">Amount</TableHead>
+                      <TableHead className="font-semibold">Date</TableHead>
+                      <TableHead className="font-semibold">Status</TableHead>
+                      {isAdmin && <TableHead className="font-semibold">Actions</TableHead>}
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {payments.map((payment) => (
+                      <TableRow key={payment.id}>
+                        {isAdmin && (
+                          <TableCell className="font-medium">
+                            {getEmployeeName(payment.employeeId)}
+                          </TableCell>
+                        )}
+                        <TableCell className="text-muted-foreground">{getProjectName(payment.projectId)}</TableCell>
+                        <TableCell className="font-semibold">
+                          {CURRENCY_SYMBOLS[payment.currency]}{payment.amount.toFixed(2)} {payment.currency}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {format(new Date(payment.date), 'MMM d, yyyy')}
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={payment.status === 'paid' ? 'default' : 'secondary'}
+                            className={payment.status === 'paid' ? 'bg-success hover:bg-success/90' : 'bg-warning hover:bg-warning/90 text-warning-foreground'}
+                          >
+                            {payment.status === 'paid' ? 'Paid' : 'Unpaid'}
+                          </Badge>
+                        </TableCell>
+                        {isAdmin && (
+                          <TableCell>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleToggleStatus(payment.id, payment.status)}
+                              >
+                                Mark as {payment.status === 'paid' ? 'Unpaid' : 'Paid'}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={() => handleDeletePayment(payment.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        )}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
