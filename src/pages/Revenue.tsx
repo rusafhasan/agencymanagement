@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProjectManagement, Currency } from '@/contexts/ProjectManagementContext';
+import { useProjectManagement, Currency, RevenueStatus } from '@/contexts/ProjectManagementContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, TrendingUp, Trash2, DollarSign, Wallet, PiggyBank } from 'lucide-react';
+import { ArrowLeft, Plus, TrendingUp, Trash2, DollarSign, Wallet, PiggyBank, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
@@ -28,6 +29,7 @@ export default function Revenue() {
   const { 
     getAllRevenues, 
     createRevenue, 
+    updateRevenue,
     deleteRevenue,
     getClients, 
     projects,
@@ -46,12 +48,16 @@ export default function Revenue() {
   const revenues = getAllRevenues();
   const clients = getClients();
 
-  // Calculate totals (all amounts converted to base currency assumption - USD for simplicity)
-  const totalRevenue = revenues.reduce((sum, r) => sum + r.amount, 0);
+  // Calculate totals - ONLY include PAID revenue
+  const paidRevenues = revenues.filter(r => r.status === 'paid');
+  const pendingRevenues = revenues.filter(r => r.status === 'pending');
+  
+  const totalPaidRevenue = paidRevenues.reduce((sum, r) => sum + r.amount, 0);
+  const totalPendingRevenue = pendingRevenues.reduce((sum, r) => sum + r.amount, 0);
   const totalPayments = payments
     .filter(p => p.status === 'paid')
     .reduce((sum, p) => sum + p.amount, 0);
-  const profit = totalRevenue - totalPayments;
+  const profit = totalPaidRevenue - totalPayments;
 
   const handleCreateRevenue = () => {
     if (newRevenue.clientId && newRevenue.projectId && newRevenue.amount) {
@@ -71,6 +77,12 @@ export default function Revenue() {
       });
       setIsCreateOpen(false);
     }
+  };
+
+  const handleToggleStatus = (revenueId: string, currentStatus: RevenueStatus) => {
+    updateRevenue(revenueId, { 
+      status: currentStatus === 'paid' ? 'pending' : 'paid' 
+    });
   };
 
   const handleDeleteRevenue = (revenueId: string) => {
@@ -116,17 +128,30 @@ export default function Revenue() {
 
       <main className="container mx-auto p-6">
         {/* Financial Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
+        <div className="grid gap-4 md:grid-cols-4 mb-6">
           <Card className="border-green-200 bg-green-50 dark:bg-green-950/20">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <DollarSign className="h-4 w-4 text-green-600" />
-                Total Revenue
+                Paid Revenue
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">${totalRevenue.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground mt-1">Money received from clients</p>
+              <div className="text-2xl font-bold text-green-600">${totalPaidRevenue.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground mt-1">Confirmed payments received</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Clock className="h-4 w-4 text-blue-600" />
+                Pending Revenue
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">${totalPendingRevenue.toFixed(2)}</div>
+              <p className="text-xs text-muted-foreground mt-1">Awaiting payment</p>
             </CardContent>
           </Card>
 
@@ -134,7 +159,7 @@ export default function Revenue() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
                 <Wallet className="h-4 w-4 text-amber-600" />
-                Total Payments
+                Employee Payments
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -154,7 +179,7 @@ export default function Revenue() {
               <div className={`text-2xl font-bold ${profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                 {profit >= 0 ? '+' : '-'}${Math.abs(profit).toFixed(2)}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Revenue minus payments</p>
+              <p className="text-xs text-muted-foreground mt-1">Paid revenue minus payments</p>
             </CardContent>
           </Card>
         </div>
@@ -164,13 +189,13 @@ export default function Revenue() {
           <CardContent className="pt-4">
             <h3 className="font-medium mb-2">How Profit is Calculated</h3>
             <p className="text-sm text-muted-foreground">
-              <strong>Profit = Total Revenue - Total Paid Payments</strong>
+              <strong>Profit = Paid Revenue - Paid Employee Payments</strong>
             </p>
             <ul className="text-sm text-muted-foreground mt-2 space-y-1">
-              <li>• <strong>Revenue:</strong> All money recorded as received from clients</li>
-              <li>• <strong>Payments:</strong> Only includes payments marked as "Paid" to employees</li>
-              <li>• <strong>Assumption:</strong> All amounts are treated as USD for simplicity (no currency conversion)</li>
-              <li>• <strong>Note:</strong> Unpaid payments are not subtracted until they are marked as paid</li>
+              <li>• <strong>Paid Revenue:</strong> Only revenue marked as "Paid" counts toward totals</li>
+              <li>• <strong>Pending Revenue:</strong> Visible in the table but NOT included in profit calculation</li>
+              <li>• <strong>Employee Payments:</strong> Only payments marked as "Paid" are subtracted</li>
+              <li>• <strong>Assumption:</strong> All amounts are treated as USD (no currency conversion)</li>
             </ul>
           </CardContent>
         </Card>
@@ -269,6 +294,10 @@ export default function Revenue() {
                 />
               </div>
 
+              <p className="text-xs text-muted-foreground">
+                New revenue is created as "Pending". Mark it as "Paid" once payment is confirmed.
+              </p>
+
               <Button 
                 className="w-full" 
                 onClick={handleCreateRevenue}
@@ -284,7 +313,7 @@ export default function Revenue() {
         <Card>
           <CardHeader>
             <CardTitle>Revenue Records</CardTitle>
-            <CardDescription>All income received from clients</CardDescription>
+            <CardDescription>All income from clients (only "Paid" counts toward profit)</CardDescription>
           </CardHeader>
           <CardContent>
             {revenues.length === 0 ? (
@@ -296,32 +325,50 @@ export default function Revenue() {
                     <TableHead>Client</TableHead>
                     <TableHead>Project</TableHead>
                     <TableHead>Amount</TableHead>
-                    <TableHead>Date Received</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {revenues.map((revenue) => (
-                    <TableRow key={revenue.id}>
+                    <TableRow key={revenue.id} className={revenue.status === 'pending' ? 'opacity-70' : ''}>
                       <TableCell className="font-medium">
                         {getClientName(revenue.clientId)}
                       </TableCell>
                       <TableCell>{getProjectName(revenue.projectId)}</TableCell>
-                      <TableCell className="text-green-600 font-medium">
+                      <TableCell className={`font-medium ${revenue.status === 'paid' ? 'text-green-600' : 'text-muted-foreground'}`}>
                         {CURRENCY_SYMBOLS[revenue.currency]}{revenue.amount.toFixed(2)} {revenue.currency}
                       </TableCell>
                       <TableCell>
                         {format(new Date(revenue.dateReceived), 'MMM d, yyyy')}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-destructive"
-                          onClick={() => handleDeleteRevenue(revenue.id)}
+                        <Badge 
+                          variant={revenue.status === 'paid' ? 'default' : 'secondary'}
+                          className={revenue.status === 'paid' ? 'bg-green-600' : 'bg-blue-500'}
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                          {revenue.status === 'paid' ? 'Paid' : 'Pending'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleToggleStatus(revenue.id, revenue.status)}
+                          >
+                            Mark as {revenue.status === 'paid' ? 'Pending' : 'Paid'}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-destructive"
+                            onClick={() => handleDeleteRevenue(revenue.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
