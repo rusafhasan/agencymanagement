@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, User } from '@/contexts/AuthContext';
 import { useProjectManagement } from '@/contexts/ProjectManagementContext';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/button';
@@ -36,11 +36,19 @@ export default function WorkspaceDetail() {
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>([]);
+  const [employees, setEmployees] = useState<User[]>([]);
 
   const workspace = workspaces.find(w => w.id === workspaceId);
   const projects = workspaceId ? getProjectsForWorkspace(workspaceId) : [];
-  const employees = getEmployees();
   const isAdmin = user?.role === 'admin';
+
+  useEffect(() => {
+    const loadEmployees = async () => {
+      const fetchedEmployees = await getEmployees();
+      setEmployees(fetchedEmployees);
+    };
+    loadEmployees();
+  }, [getEmployees]);
 
   if (!workspace) {
     return (
@@ -50,23 +58,23 @@ export default function WorkspaceDetail() {
     );
   }
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!newName.trim() || !workspaceId) {
       toast({ title: 'Please enter a project name', variant: 'destructive' });
       return;
     }
-    const project = createProject(workspaceId, newName.trim(), newDescription.trim());
-    if (selectedEmployeeIds.length > 0) {
-      updateProject(project.id, { assignedEmployeeIds: selectedEmployeeIds });
+    const project = await createProject(workspaceId, newName.trim(), newDescription.trim());
+    if (project && selectedEmployeeIds.length > 0) {
+      await updateProject(project.id, { assignedEmployeeIds: selectedEmployeeIds });
     }
     resetForm();
     setIsCreateOpen(false);
     toast({ title: 'Project created successfully' });
   };
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!editingProjectId) return;
-    updateProject(editingProjectId, {
+    await updateProject(editingProjectId, {
       name: newName,
       description: newDescription,
       assignedEmployeeIds: selectedEmployeeIds,
@@ -76,9 +84,9 @@ export default function WorkspaceDetail() {
     toast({ title: 'Project updated' });
   };
 
-  const handleDelete = (id: string, name: string) => {
+  const handleDelete = async (id: string, name: string) => {
     if (confirm(`Delete project "${name}" and all its tasks?`)) {
-      deleteProject(id);
+      await deleteProject(id);
       toast({ title: 'Project deleted' });
     }
   };

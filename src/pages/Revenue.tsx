@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect } from 'react';
+import { useAuth, User } from '@/contexts/AuthContext';
 import { useProjectManagement, Currency, RevenueStatus } from '@/contexts/ProjectManagementContext';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,7 @@ export default function Revenue() {
   } = useProjectManagement();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [clients, setClients] = useState<User[]>([]);
   const [newRevenue, setNewRevenue] = useState({
     clientId: '',
     projectId: '',
@@ -45,7 +46,14 @@ export default function Revenue() {
   });
 
   const revenues = getAllRevenues();
-  const clients = getClients();
+
+  useEffect(() => {
+    const loadClients = async () => {
+      const fetchedClients = await getClients();
+      setClients(fetchedClients);
+    };
+    loadClients();
+  }, [getClients]);
 
   // Calculate totals - ONLY include PAID revenue
   const paidRevenues = revenues.filter(r => r.status === 'paid');
@@ -58,9 +66,9 @@ export default function Revenue() {
     .reduce((sum, p) => sum + p.amount, 0);
   const profit = totalPaidRevenue - totalPayments;
 
-  const handleCreateRevenue = () => {
+  const handleCreateRevenue = async () => {
     if (newRevenue.clientId && newRevenue.projectId && newRevenue.amount) {
-      createRevenue(
+      await createRevenue(
         newRevenue.clientId,
         newRevenue.projectId,
         parseFloat(newRevenue.amount),
@@ -78,15 +86,15 @@ export default function Revenue() {
     }
   };
 
-  const handleToggleStatus = (revenueId: string, currentStatus: RevenueStatus) => {
-    updateRevenue(revenueId, { 
+  const handleToggleStatus = async (revenueId: string, currentStatus: RevenueStatus) => {
+    await updateRevenue(revenueId, { 
       status: currentStatus === 'paid' ? 'pending' : 'paid' 
     });
   };
 
-  const handleDeleteRevenue = (revenueId: string) => {
+  const handleDeleteRevenue = async (revenueId: string) => {
     if (confirm('Are you sure you want to delete this revenue record?')) {
-      deleteRevenue(revenueId);
+      await deleteRevenue(revenueId);
     }
   };
 

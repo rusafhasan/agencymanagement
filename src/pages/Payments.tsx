@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect } from 'react';
+import { useAuth, User } from '@/contexts/AuthContext';
 import { useProjectManagement, Currency, PaymentStatus } from '@/contexts/ProjectManagementContext';
 import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,7 @@ export default function Payments() {
   } = useProjectManagement();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [employees, setEmployees] = useState<User[]>([]);
   const [newPayment, setNewPayment] = useState({
     employeeId: '',
     projectId: '',
@@ -44,12 +45,19 @@ export default function Payments() {
   });
 
   const payments = getPaymentsForUser();
-  const employees = getEmployees();
   const isAdmin = user?.role === 'admin';
 
-  const handleCreatePayment = () => {
+  useEffect(() => {
+    const loadEmployees = async () => {
+      const fetchedEmployees = await getEmployees();
+      setEmployees(fetchedEmployees);
+    };
+    loadEmployees();
+  }, [getEmployees]);
+
+  const handleCreatePayment = async () => {
     if (newPayment.employeeId && newPayment.projectId && newPayment.amount) {
-      createPayment(
+      await createPayment(
         newPayment.employeeId,
         newPayment.projectId,
         parseFloat(newPayment.amount),
@@ -67,15 +75,15 @@ export default function Payments() {
     }
   };
 
-  const handleToggleStatus = (paymentId: string, currentStatus: PaymentStatus) => {
-    updatePayment(paymentId, { 
+  const handleToggleStatus = async (paymentId: string, currentStatus: PaymentStatus) => {
+    await updatePayment(paymentId, { 
       status: currentStatus === 'paid' ? 'unpaid' : 'paid' 
     });
   };
 
-  const handleDeletePayment = (paymentId: string) => {
+  const handleDeletePayment = async (paymentId: string) => {
     if (confirm('Are you sure you want to delete this payment?')) {
-      deletePayment(paymentId);
+      await deletePayment(paymentId);
     }
   };
 

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useState, useEffect } from 'react';
+import { useAuth, User } from '@/contexts/AuthContext';
 import { useProjectManagement } from '@/contexts/ProjectManagementContext';
 import { useNavigate } from 'react-router-dom';
 import AppHeader from '@/components/layout/AppHeader';
@@ -22,26 +22,34 @@ export default function Workspaces() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [selectedClientId, setSelectedClientId] = useState('');
+  const [clients, setClients] = useState<User[]>([]);
 
   const workspaces = getWorkspacesForUser();
-  const clients = getClients();
   const isAdmin = user?.role === 'admin';
 
-  const handleCreate = () => {
+  useEffect(() => {
+    const loadClients = async () => {
+      const fetchedClients = await getClients();
+      setClients(fetchedClients);
+    };
+    loadClients();
+  }, [getClients]);
+
+  const handleCreate = async () => {
     if (!newName.trim() || !selectedClientId) {
       toast({ title: 'Please fill all fields', variant: 'destructive' });
       return;
     }
-    createWorkspace(newName.trim(), selectedClientId);
+    await createWorkspace(newName.trim(), selectedClientId);
     setNewName('');
     setSelectedClientId('');
     setIsCreateOpen(false);
     toast({ title: 'Workspace created successfully' });
   };
 
-  const handleDelete = (id: string, name: string) => {
+  const handleDelete = async (id: string, name: string) => {
     if (confirm(`Delete workspace "${name}" and all its projects?`)) {
-      deleteWorkspace(id);
+      await deleteWorkspace(id);
       toast({ title: 'Workspace deleted' });
     }
   };
