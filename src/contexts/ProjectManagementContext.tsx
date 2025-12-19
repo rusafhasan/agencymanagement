@@ -42,6 +42,7 @@ export interface Comment {
 }
 
 export type PaymentStatus = 'unpaid' | 'paid';
+export type RevenueStatus = 'pending' | 'paid';
 export type Currency = 'USD' | 'EUR' | 'GBP' | 'CAD' | 'AUD';
 
 export interface Payment {
@@ -61,6 +62,7 @@ export interface Revenue {
   projectId: string;
   amount: number;
   currency: Currency;
+  status: RevenueStatus;
   dateReceived: string;
   createdAt: string;
 }
@@ -104,7 +106,7 @@ interface ProjectManagementContextType {
   // Revenue
   revenues: Revenue[];
   createRevenue: (clientId: string, projectId: string, amount: number, currency: Currency, dateReceived: string) => Revenue;
-  updateRevenue: (id: string, updates: Partial<Pick<Revenue, 'amount' | 'currency' | 'dateReceived'>>) => void;
+  updateRevenue: (id: string, updates: Partial<Pick<Revenue, 'status' | 'amount' | 'currency' | 'dateReceived'>>) => void;
   deleteRevenue: (id: string) => void;
   getAllRevenues: () => Revenue[];
 
@@ -366,6 +368,7 @@ export function ProjectManagementProvider({ children }: { children: ReactNode })
       projectId,
       amount,
       currency,
+      status: 'pending',
       dateReceived,
       createdAt: new Date().toISOString(),
     };
@@ -373,7 +376,7 @@ export function ProjectManagementProvider({ children }: { children: ReactNode })
     return revenue;
   };
 
-  const updateRevenue = (id: string, updates: Partial<Pick<Revenue, 'amount' | 'currency' | 'dateReceived'>>) => {
+  const updateRevenue = (id: string, updates: Partial<Pick<Revenue, 'status' | 'amount' | 'currency' | 'dateReceived'>>) => {
     setRevenues(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
   };
 
