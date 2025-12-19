@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, UserCircle, ClipboardList, Calendar, MessageSquare } from 'lucide-react';
+import { LogOut, UserCircle, FolderKanban } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function EmployeeDashboard() {
@@ -49,62 +49,16 @@ export default function EmployeeDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">My Tasks</CardTitle>
-              <ClipboardList className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">
-                Connect backend to see tasks
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Upcoming</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">
-                Connect backend to see schedule
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Messages</CardTitle>
-              <MessageSquare className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">
-                Connect backend to see messages
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Placeholder Content */}
-        <Card className="mt-8">
+        <Card>
           <CardHeader>
-            <CardTitle>Your Work Area</CardTitle>
-            <CardDescription>
-              This is your employee dashboard. When connected to a backend, you'll be able to:
-            </CardDescription>
+            <CardTitle>Quick Actions</CardTitle>
+            <CardDescription>Access your assigned projects and tasks</CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="list-inside list-disc space-y-2 text-muted-foreground">
-              <li>View and manage your assigned tasks</li>
-              <li>Check your schedule and deadlines</li>
-              <li>Communicate with team members</li>
-              <li>Track your time and progress</li>
-            </ul>
+            <Button onClick={() => navigate('/workspaces')} className="gap-2">
+              <FolderKanban className="h-4 w-4" />
+              Open My Projects
+            </Button>
           </CardContent>
         </Card>
       </main>

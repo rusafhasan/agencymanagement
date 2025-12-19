@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Shield, Users, Briefcase, UserCheck, UserX } from 'lucide-react';
+import { LogOut, Shield, Users, Briefcase, UserCheck, UserX, FolderKanban } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
@@ -139,6 +139,18 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
+        {/* Quick Actions */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Quick Actions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate('/workspaces')} className="gap-2">
+              <FolderKanban className="h-4 w-4" />
+              Open Project Management
+            </Button>
+          </CardContent>
+        </Card>
         {/* User Management */}
         <Card className="mt-8">
           <CardHeader>
