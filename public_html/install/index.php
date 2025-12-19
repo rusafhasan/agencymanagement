@@ -205,6 +205,17 @@ function importSchema(string $host, string $name, string $user, string $pass): a
     }
 }
 
+// Generate UUID
+function generateUUID(): string {
+    return sprintf('%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+        mt_rand(0, 0xffff), mt_rand(0, 0xffff),
+        mt_rand(0, 0xffff),
+        mt_rand(0, 0x0fff) | 0x4000,
+        mt_rand(0, 0x3fff) | 0x8000,
+        mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
+    );
+}
+
 // Create admin user
 function createAdmin(string $host, string $name, string $user, string $pass, string $email, string $adminName, string $adminPass): array {
     try {
@@ -222,10 +233,11 @@ function createAdmin(string $host, string $name, string $user, string $pass, str
             return ['success' => false, 'error' => 'User with this email already exists'];
         }
         
-        // Create admin user
+        // Create admin user with generated UUID
+        $userId = generateUUID();
         $hashedPassword = password_hash($adminPass, PASSWORD_BCRYPT);
-        $stmt = $pdo->prepare("INSERT INTO users (email, name, password_hash, role, status) VALUES (?, ?, ?, 'admin', 'active')");
-        $stmt->execute([$email, $adminName, $hashedPassword]);
+        $stmt = $pdo->prepare("INSERT INTO users (id, email, name, password_hash, role, disabled) VALUES (?, ?, ?, ?, 'admin', 0)");
+        $stmt->execute([$userId, $email, $adminName, $hashedPassword]);
         
         return ['success' => true];
     } catch (PDOException $e) {
