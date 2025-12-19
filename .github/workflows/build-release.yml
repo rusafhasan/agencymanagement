@@ -1,0 +1,43 @@
+name: Build and Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build React app
+        run: npm run build
+
+      - name: Copy PHP backend files
+        run: |
+          cp -r public_html/api dist/api
+          cp -r public_html/install dist/install
+          cp public_html/.htaccess dist/.htaccess
+
+      - name: Create ZIP file
+        run: |
+          cd dist
+          zip -r ../agency-dashboard.zip .
+
+      - name: Upload ZIP to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: agency-dashboard.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
