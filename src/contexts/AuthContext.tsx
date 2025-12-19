@@ -14,20 +14,50 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (email: string, password: string, name: string, role: UserRole) => Promise<{ success: boolean; error?: string }>;
+  signup: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  getAllUsers: () => User[];
+  updateUserRole: (userId: string, newRole: UserRole) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Storage key - change this when connecting real backend
+// Storage keys
 const STORAGE_KEY = 'agency_dashboard_user';
 const USERS_KEY = 'agency_dashboard_users';
 
-// Mock user database - in production, this would be your backend
-const getStoredUsers = (): Record<string, { password: string; user: User }> => {
+// Pre-seeded admin account
+const ADMIN_EMAIL = 'rusafhasan544@gmail.com';
+const ADMIN_PASSWORD = 'rusafhasan544@gmail.com';
+const ADMIN_USER: User = {
+  id: 'admin-001',
+  email: ADMIN_EMAIL,
+  name: 'Admin',
+  role: 'admin',
+};
+
+// Initialize users with admin account
+const initializeUsers = (): Record<string, { password: string; user: User }> => {
   const stored = localStorage.getItem(USERS_KEY);
-  return stored ? JSON.parse(stored) : {};
+  if (stored) {
+    const users = JSON.parse(stored);
+    // Ensure admin always exists
+    if (!users[ADMIN_EMAIL]) {
+      users[ADMIN_EMAIL] = { password: ADMIN_PASSWORD, user: ADMIN_USER };
+      localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    }
+    return users;
+  }
+  // First time - create with admin
+  const initialUsers = {
+    [ADMIN_EMAIL]: { password: ADMIN_PASSWORD, user: ADMIN_USER }
+  };
+  localStorage.setItem(USERS_KEY, JSON.stringify(initialUsers));
+  return initialUsers;
+};
+
+const getStoredUsers = (): Record<string, { password: string; user: User }> => {
+  return initializeUsers();
 };
 
 const saveUsers = (users: Record<string, { password: string; user: User }>) => {
@@ -38,8 +68,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for existing session on mount
+  // Initialize on mount
   useEffect(() => {
+    initializeUsers(); // Ensure admin exists
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       setUser(JSON.parse(stored));
@@ -48,7 +79,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
 
     const users = getStoredUsers();
@@ -70,10 +100,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signup = async (
     email: string,
     password: string,
-    name: string,
-    role: UserRole
+    name: string
   ): Promise<{ success: boolean; error?: string }> => {
-    // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
 
     const users = getStoredUsers();
@@ -83,11 +111,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: 'An account with this email already exists' };
     }
 
+    // All new signups are clients by default - only admin can change roles
     const newUser: User = {
       id: crypto.randomUUID(),
       email: emailLower,
       name,
-      role,
+      role: 'client',
     };
 
     users[emailLower] = { password, user: newUser };
@@ -103,8 +132,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(STORAGE_KEY);
   };
 
+  // Admin functions
+  const getAllUsers = (): User[] => {
+    const users = getStoredUsers();
+    return Object.values(users).map(u => u.user);
+  };
+
+  const updateUserRole = (userId: string, newRole: UserRole): boolean => {
+    if (!user || user.role !== 'admin') return false;
+
+    const users = getStoredUsers();
+    for (const email in users) {
+      if (users[email].user.id === userId) {
+        users[email].user.role = newRole;
+        saveUsers(users);
+        return true;
+      }
+    }
+    return false;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, signup, logout, getAllUsers, updateUserRole }}>
       {children}
     </AuthContext.Provider>
   );

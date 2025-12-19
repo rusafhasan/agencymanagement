@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Building2, Loader2 } from 'lucide-react';
 
@@ -14,7 +13,6 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [role, setRole] = useState<UserRole>('client');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { login, signup } = useAuth();
@@ -30,7 +28,7 @@ export default function Auth() {
       case 'client':
         return '/client';
       default:
-        return '/';
+        return '/client';
     }
   };
 
@@ -42,7 +40,6 @@ export default function Auth() {
       if (isLogin) {
         const result = await login(email, password);
         if (result.success) {
-          // Get user from localStorage to determine redirect
           const stored = localStorage.getItem('agency_dashboard_user');
           if (stored) {
             const user = JSON.parse(stored);
@@ -66,13 +63,13 @@ export default function Auth() {
           return;
         }
 
-        const result = await signup(email, password, name, role);
+        const result = await signup(email, password, name);
         if (result.success) {
           toast({
             title: 'Account created',
-            description: 'Welcome to the agency dashboard!',
+            description: 'Welcome! You have been registered as a client.',
           });
-          navigate(getRedirectPath(role));
+          navigate('/client');
         } else {
           toast({
             title: 'Signup failed',
@@ -99,7 +96,7 @@ export default function Auth() {
           <CardDescription>
             {isLogin
               ? 'Sign in to access your dashboard'
-              : 'Sign up to get started with the agency'}
+              : 'Sign up as a client to get started'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -142,25 +139,6 @@ export default function Auth() {
                 minLength={6}
               />
             </div>
-
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select value={role} onValueChange={(v) => setRole(v as UserRole)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select your role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="employee">Employee</SelectItem>
-                    <SelectItem value="client">Client</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Choose the role that best describes you
-                </p>
-              </div>
-            )}
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
