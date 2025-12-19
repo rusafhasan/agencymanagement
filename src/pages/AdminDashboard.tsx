@@ -17,13 +17,18 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
-    setUsers(getAllUsers());
-  }, []);
+    const loadUsers = async () => {
+      const fetchedUsers = await getAllUsers();
+      setUsers(fetchedUsers);
+    };
+    loadUsers();
+  }, [getAllUsers]);
 
-  const handleRoleChange = (userId: string, newRole: UserRole) => {
-    const success = updateUserRole(userId, newRole);
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
+    const success = await updateUserRole(userId, newRole);
     if (success) {
-      setUsers(getAllUsers());
+      const updatedUsers = await getAllUsers();
+      setUsers(updatedUsers);
       toast({
         title: 'Role updated',
         description: 'User role has been changed successfully.',
@@ -31,10 +36,11 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleToggleStatus = (userId: string, currentlyDisabled: boolean) => {
-    const success = toggleUserStatus(userId);
+  const handleToggleStatus = async (userId: string, currentlyDisabled: boolean) => {
+    const success = await toggleUserStatus(userId);
     if (success) {
-      setUsers(getAllUsers());
+      const updatedUsers = await getAllUsers();
+      setUsers(updatedUsers);
       toast({
         title: currentlyDisabled ? 'Account enabled' : 'Account disabled',
         description: currentlyDisabled 

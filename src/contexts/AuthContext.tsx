@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { hashPassword, verifyPassword } from '@/lib/crypto';
+import { authApi, usersApi, getToken, removeToken, User as ApiUser } from '@/lib/api';
 import { emailSchema, passwordSchema, nameSchema, formatValidationErrors } from '@/lib/validation';
 
 // User roles - easy to extend later
@@ -9,7 +9,7 @@ export interface UserProfile {
   phone?: string;
   address?: string;
   companyName?: string;
-  profilePicture?: string; // base64 data URL for demo purposes
+  profilePicture?: string;
 }
 
 export interface User {
@@ -21,90 +21,65 @@ export interface User {
   profile?: UserProfile;
 }
 
-interface StoredUserRecord {
-  passwordHash: string;
-  salt: string;
-  user: User;
-}
-
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signup: (email: string, password: string, name: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
-  getAllUsers: () => User[];
-  updateUserRole: (userId: string, newRole: UserRole) => boolean;
-  toggleUserStatus: (userId: string) => boolean;
-  updateProfile: (updates: { name?: string; profile?: UserProfile }) => boolean;
+  getAllUsers: () => Promise<User[]>;
+  updateUserRole: (userId: string, newRole: UserRole) => Promise<boolean>;
+  toggleUserStatus: (userId: string) => Promise<boolean>;
+  updateProfile: (updates: { name?: string; profile?: UserProfile }) => Promise<boolean>;
   changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Storage keys
-const STORAGE_KEY = 'agency_dashboard_user';
-const USERS_KEY = 'agency_dashboard_users';
+// Storage key for cached user data
+const USER_CACHE_KEY = 'agency_dashboard_user_cache';
 
-/**
- * SECURITY NOTE: This application uses client-side authentication with localStorage.
- * This is suitable for demos/prototypes only. For production:
- * - Use a proper backend with server-side authentication
- * - Store passwords hashed with bcrypt/argon2 on the server
- * - Use HTTP-only cookies for session management
- * - Implement proper CSRF protection
- * 
- * Enable Lovable Cloud for proper authentication.
- */
-
-// Helper to get stored users with type safety
-const getStoredUsers = (): Record<string, StoredUserRecord> => {
-  const stored = localStorage.getItem(USERS_KEY);
-  if (stored) {
-    try {
-      return JSON.parse(stored);
-    } catch {
-      return {};
-    }
-  }
-  return {};
-};
-
-const saveUsers = (users: Record<string, StoredUserRecord>) => {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-};
+function mapApiUserToUser(apiUser: ApiUser): User {
+  return {
+    id: apiUser.id,
+    email: apiUser.email,
+    name: apiUser.name,
+    role: apiUser.role,
+    disabled: apiUser.disabled,
+    profile: apiUser.profile ? {
+      phone: apiUser.profile.phone ?? undefined,
+      address: apiUser.profile.address ?? undefined,
+      companyName: apiUser.profile.companyName ?? undefined,
+      profilePicture: apiUser.profile.profilePicture ?? undefined,
+    } : undefined,
+  };
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
 
-  // Hardcoded admin email for testing
-  const ADMIN_EMAIL = 'rusafhasan544@gmail.com';
-
-  // Initialize on mount
+  // Initialize on mount - check for existing token
   useEffect(() => {
-    // Ensure hardcoded admin user has admin role
-    const users = getStoredUsers();
-    if (users[ADMIN_EMAIL] && users[ADMIN_EMAIL].user.role !== 'admin') {
-      users[ADMIN_EMAIL].user.role = 'admin';
-      saveUsers(users);
-    }
-
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsedUser = JSON.parse(stored);
-        // Update session if this is the admin user
-        if (parsedUser.email === ADMIN_EMAIL) {
-          parsedUser.role = 'admin';
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsedUser));
+    const initAuth = async () => {
+      const token = getToken();
+      if (token) {
+        try {
+          const { user: apiUser } = await authApi.me();
+          const mappedUser = mapApiUserToUser(apiUser);
+          setUser(mappedUser);
+          localStorage.setItem(USER_CACHE_KEY, JSON.stringify(mappedUser));
+        } catch {
+          // Token invalid, clear it
+          removeToken();
+          localStorage.removeItem(USER_CACHE_KEY);
         }
-        setUser(parsedUser);
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
       }
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+    
+    initAuth();
   }, []);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
@@ -118,29 +93,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: 'Password is required' };
     }
 
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const users = getStoredUsers();
-    const validatedEmail = emailValidation.data;
-    const userRecord = users[validatedEmail];
-
-    if (!userRecord) {
-      return { success: false, error: 'No account found with this email' };
+    try {
+      const { user: apiUser } = await authApi.login(email, password);
+      const mappedUser = mapApiUserToUser(apiUser);
+      setUser(mappedUser);
+      localStorage.setItem(USER_CACHE_KEY, JSON.stringify(mappedUser));
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Login failed' };
     }
-
-    // Verify password hash
-    const isValid = await verifyPassword(password, userRecord.passwordHash, userRecord.salt);
-    if (!isValid) {
-      return { success: false, error: 'Incorrect password' };
-    }
-
-    if (userRecord.user.disabled) {
-      return { success: false, error: 'Your account has been disabled. Please contact an administrator.' };
-    }
-
-    setUser(userRecord.user);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(userRecord.user));
-    return { success: true };
   };
 
   const signup = async (
@@ -164,80 +125,71 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: formatValidationErrors(nameValidation.error) };
     }
 
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    const users = getStoredUsers();
-    const emailLower = emailValidation.data;
-
-    if (users[emailLower]) {
-      return { success: false, error: 'An account with this email already exists' };
+    try {
+      const { user: apiUser } = await authApi.signup(email, password, name);
+      const mappedUser = mapApiUserToUser(apiUser);
+      setUser(mappedUser);
+      localStorage.setItem(USER_CACHE_KEY, JSON.stringify(mappedUser));
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Signup failed' };
     }
-
-    // Hash the password before storing
-    const { hash, salt } = await hashPassword(password);
-
-    // First user becomes admin, all others are clients by default
-    const isFirstUser = Object.keys(users).length === 0;
-    
-    const newUser: User = {
-      id: crypto.randomUUID(),
-      email: emailLower,
-      name: nameValidation.data,
-      role: isFirstUser ? 'admin' : 'client',
-      disabled: false,
-    };
-
-    users[emailLower] = { passwordHash: hash, salt, user: newUser };
-    saveUsers(users);
-
-    setUser(newUser);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newUser));
-    return { success: true };
   };
 
   const logout = () => {
+    authApi.logout();
     setUser(null);
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(USER_CACHE_KEY);
   };
 
   // Admin functions
-  const getAllUsers = (): User[] => {
-    const users = getStoredUsers();
-    return Object.values(users).map(u => u.user);
+  const getAllUsers = async (): Promise<User[]> => {
+    if (!user || user.role !== 'admin') return [];
+    
+    try {
+      const { users } = await usersApi.getAll();
+      const mappedUsers = users.map(mapApiUserToUser);
+      setAllUsers(mappedUsers);
+      return mappedUsers;
+    } catch {
+      return allUsers; // Return cached users on error
+    }
   };
 
-  const updateUserRole = (userId: string, newRole: UserRole): boolean => {
+  const updateUserRole = async (userId: string, newRole: UserRole): Promise<boolean> => {
     if (!user || user.role !== 'admin') return false;
 
-    const users = getStoredUsers();
-    for (const email in users) {
-      if (users[email].user.id === userId) {
-        users[email].user.role = newRole;
-        saveUsers(users);
-        return true;
-      }
+    try {
+      await usersApi.update(userId, { role: newRole });
+      // Refresh users list
+      await getAllUsers();
+      return true;
+    } catch {
+      return false;
     }
-    return false;
   };
 
-  const toggleUserStatus = (userId: string): boolean => {
+  const toggleUserStatus = async (userId: string): Promise<boolean> => {
     if (!user || user.role !== 'admin') return false;
     
     // Prevent disabling yourself
     if (user.id === userId) return false;
 
-    const users = getStoredUsers();
-    for (const email in users) {
-      if (users[email].user.id === userId) {
-        users[email].user.disabled = !users[email].user.disabled;
-        saveUsers(users);
-        return true;
-      }
+    try {
+      // Find current status
+      const targetUser = allUsers.find(u => u.id === userId);
+      if (!targetUser) return false;
+      
+      await usersApi.update(userId, { disabled: !targetUser.disabled });
+      // Refresh users list
+      await getAllUsers();
+      return true;
+    } catch {
+      return false;
     }
-    return false;
   };
 
-  const updateProfile = (updates: { name?: string; profile?: UserProfile }): boolean => {
+  const updateProfile = async (updates: { name?: string; profile?: UserProfile }): Promise<boolean> => {
     if (!user) return false;
 
     // Validate name if provided
@@ -246,28 +198,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!nameValidation.success) {
         return false;
       }
-      updates.name = nameValidation.data;
     }
 
-    const users = getStoredUsers();
-    for (const email in users) {
-      if (users[email].user.id === user.id) {
-        if (updates.name) {
-          users[email].user.name = updates.name;
-        }
-        if (updates.profile) {
-          users[email].user.profile = { ...users[email].user.profile, ...updates.profile };
-        }
-        saveUsers(users);
-        
-        // Update current user state
-        const updatedUser = { ...users[email].user };
-        setUser(updatedUser);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
-        return true;
+    try {
+      const profileUpdates: Record<string, unknown> = {};
+      if (updates.name) profileUpdates.name = updates.name;
+      if (updates.profile) {
+        if (updates.profile.phone) profileUpdates.phone = updates.profile.phone;
+        if (updates.profile.address) profileUpdates.address = updates.profile.address;
+        if (updates.profile.companyName) profileUpdates.companyName = updates.profile.companyName;
+        if (updates.profile.profilePicture) profileUpdates.profilePicture = updates.profile.profilePicture;
       }
+      
+      const { user: apiUser } = await authApi.updateProfile(profileUpdates);
+      const mappedUser = mapApiUserToUser(apiUser);
+      setUser(mappedUser);
+      localStorage.setItem(USER_CACHE_KEY, JSON.stringify(mappedUser));
+      return true;
+    } catch {
+      return false;
     }
-    return false;
   };
 
   const changePassword = async (oldPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
@@ -279,25 +229,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: formatValidationErrors(passwordValidation.error) };
     }
 
-    const users = getStoredUsers();
-    const userRecord = users[user.email];
-
-    if (!userRecord) {
-      return { success: false, error: 'User not found' };
+    try {
+      await authApi.changePassword(oldPassword, newPassword);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'Password change failed' };
     }
-
-    // Verify old password
-    const isValid = await verifyPassword(oldPassword, userRecord.passwordHash, userRecord.salt);
-    if (!isValid) {
-      return { success: false, error: 'Current password is incorrect' };
-    }
-
-    // Hash and save new password
-    const { hash, salt } = await hashPassword(newPassword);
-    users[user.email].passwordHash = hash;
-    users[user.email].salt = salt;
-    saveUsers(users);
-    return { success: true };
   };
 
   return (

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Task, TaskStatus, useProjectManagement } from '@/contexts/ProjectManagementContext';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, User } from '@/contexts/AuthContext';
 import KanbanColumn from './KanbanColumn';
 import TaskDetailModal from './TaskDetailModal';
 import TaskListView from './TaskListView';
@@ -32,9 +32,17 @@ export default function KanbanBoard({ projectId, readOnly = false }: KanbanBoard
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [employees, setEmployees] = useState<User[]>([]);
 
   const tasks = getTasksForProject(projectId);
-  const employees = getEmployees();
+
+  useEffect(() => {
+    const loadEmployees = async () => {
+      const fetchedEmployees = await getEmployees();
+      setEmployees(fetchedEmployees);
+    };
+    loadEmployees();
+  }, [getEmployees]);
 
   const canCreateTask = user?.role === 'admin';
 
@@ -55,7 +63,7 @@ export default function KanbanBoard({ projectId, readOnly = false }: KanbanBoard
     e.dataTransfer.dropEffect = 'move';
   };
 
-  const handleDrop = (e: React.DragEvent, newStatus: TaskStatus) => {
+  const handleDrop = async (e: React.DragEvent, newStatus: TaskStatus) => {
     e.preventDefault();
     if (!draggedTask || readOnly) return;
 
@@ -64,13 +72,13 @@ export default function KanbanBoard({ projectId, readOnly = false }: KanbanBoard
       ? Math.max(...tasksInColumn.map(t => t.order)) + 1 
       : 1;
 
-    moveTask(draggedTask.id, newStatus, newOrder);
+    await moveTask(draggedTask.id, newStatus, newOrder);
     setDraggedTask(null);
   };
 
-  const handleAddTask = () => {
+  const handleAddTask = async () => {
     if (newTaskTitle.trim()) {
-      createTask(projectId, newTaskTitle.trim(), '');
+      await createTask(projectId, newTaskTitle.trim(), '');
       setNewTaskTitle('');
       setIsAddingTask(false);
     }
