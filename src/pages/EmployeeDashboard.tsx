@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, UserCircle, FolderKanban, DollarSign } from 'lucide-react';
+import { LogOut, UserCircle, FolderKanban, DollarSign, User as UserIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function EmployeeDashboard() {
@@ -31,6 +31,10 @@ export default function EmployeeDashboard() {
             <span className="text-sm text-muted-foreground">
               Welcome, {user?.name}
             </span>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/profile')}>
+              <UserIcon className="mr-2 h-4 w-4" />
+              Profile
+            </Button>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
               Sign Out
