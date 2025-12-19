@@ -78,13 +78,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Hardcoded admin email for testing
+  const ADMIN_EMAIL = 'rusafhasan544@gmail.com';
+
   // Initialize on mount
   useEffect(() => {
-    // Ensure specific admin user
+    // Ensure hardcoded admin user has admin role
     const users = getStoredUsers();
-    const adminEmail = 'rusafhasan547@gmail.com';
-    if (users[adminEmail] && users[adminEmail].user.role !== 'admin') {
-      users[adminEmail].user.role = 'admin';
+    if (users[ADMIN_EMAIL] && users[ADMIN_EMAIL].user.role !== 'admin') {
+      users[ADMIN_EMAIL].user.role = 'admin';
       saveUsers(users);
     }
 
@@ -93,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const parsedUser = JSON.parse(stored);
         // Update session if this is the admin user
-        if (parsedUser.email === adminEmail) {
+        if (parsedUser.email === ADMIN_EMAIL) {
           parsedUser.role = 'admin';
           localStorage.setItem(STORAGE_KEY, JSON.stringify(parsedUser));
         }
