@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useAuth, User, UserRole } from '@/contexts/AuthContext';
+import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Shield, Users, Briefcase, UserCheck, UserX, FolderKanban, DollarSign, TrendingUp, User as UserIcon } from 'lucide-react';
+import { Shield, Users, Briefcase, UserCheck, UserX, FolderKanban, DollarSign, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 export default function AdminDashboard() {
-  const { user, logout, getAllUsers, updateUserRole, toggleUserStatus } = useAuth();
+  const { user, getAllUsers, updateUserRole, toggleUserStatus } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
@@ -18,11 +19,6 @@ export default function AdminDashboard() {
   useEffect(() => {
     setUsers(getAllUsers());
   }, []);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/auth');
-  };
 
   const handleRoleChange = (userId: string, newRole: UserRole) => {
     const success = updateUserRole(userId, newRole);
@@ -72,175 +68,168 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <Shield className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="font-semibold">Admin Dashboard</h1>
-              <p className="text-xs text-muted-foreground">Agency Management</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">
-              Welcome, {user?.name}
-            </span>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/profile')}>
-              <UserIcon className="mr-2 h-4 w-4" />
-              Profile
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="page-container">
+      <AppHeader 
+        title="Admin Dashboard" 
+        subtitle="Agency Management"
+        icon={<Shield className="h-5 w-5 text-primary-foreground" />}
+      />
 
-      {/* Main Content */}
-      <main className="container mx-auto p-6">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard Overview</h2>
-          <p className="text-muted-foreground">
+      <main className="content-container">
+        <div className="mb-8 animate-fade-in">
+          <h2 className="section-heading">Dashboard Overview</h2>
+          <p className="section-subheading">
             Manage your agency, employees, and clients from here.
           </p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-3 mb-8">
+          <Card className="card-premium hover-lift animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Admins</CardTitle>
-              <Shield className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Admins</CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Shield className="h-4 w-4 text-primary" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.admins}</div>
+              <div className="text-3xl font-bold font-display">{stats.admins}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="card-premium hover-lift animate-fade-in" style={{ animationDelay: '0.15s' }}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Employees</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Employees</CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center">
+                <Users className="h-4 w-4 text-accent-foreground" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.employees}</div>
+              <div className="text-3xl font-bold font-display">{stats.employees}</div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="card-premium hover-lift animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Clients</CardTitle>
-              <Briefcase className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-muted-foreground">Clients</CardTitle>
+              <div className="h-8 w-8 rounded-lg bg-secondary flex items-center justify-center">
+                <Briefcase className="h-4 w-4 text-secondary-foreground" />
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.clients}</div>
+              <div className="text-3xl font-bold font-display">{stats.clients}</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Quick Actions */}
-        <Card className="mt-6">
+        <Card className="card-premium mb-8 animate-fade-in" style={{ animationDelay: '0.25s' }}>
           <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+            <CardTitle className="font-display">Quick Actions</CardTitle>
+            <CardDescription>Access key areas of your agency</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => navigate('/workspaces')} className="gap-2">
-              <FolderKanban className="h-4 w-4" />
-              Open Project Management
-            </Button>
-            <Button onClick={() => navigate('/payments')} variant="outline" className="gap-2">
-              <DollarSign className="h-4 w-4" />
-              Manage Payments
-            </Button>
-            <Button onClick={() => navigate('/revenue')} variant="outline" className="gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Revenue & Profit
-            </Button>
+            <div className="flex flex-wrap gap-3">
+              <Button onClick={() => navigate('/workspaces')} className="gap-2 shadow-premium-sm hover:shadow-premium-md transition-shadow">
+                <FolderKanban className="h-4 w-4" />
+                Open Project Management
+              </Button>
+              <Button onClick={() => navigate('/payments')} variant="outline" className="gap-2">
+                <DollarSign className="h-4 w-4" />
+                Manage Payments
+              </Button>
+              <Button onClick={() => navigate('/revenue')} variant="outline" className="gap-2">
+                <TrendingUp className="h-4 w-4" />
+                Revenue & Profit
+              </Button>
+            </div>
           </CardContent>
         </Card>
+
         {/* User Management */}
-        <Card className="mt-8">
+        <Card className="card-premium animate-fade-in" style={{ animationDelay: '0.3s' }}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-2 font-display">
+              <Users className="h-5 w-5 text-primary" />
               User Management
             </CardTitle>
             <CardDescription>
-              View all users, change their roles, and enable or disable accounts. Only admins can access this section.
+              View all users, change their roles, and enable or disable accounts.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Change Role</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((u) => (
-                  <TableRow key={u.id} className={u.disabled ? 'opacity-50' : ''}>
-                    <TableCell className="font-medium">{u.name}</TableCell>
-                    <TableCell>{u.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={getRoleBadgeVariant(u.role)}>
-                        {u.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={u.disabled ? 'destructive' : 'default'}>
-                        {u.disabled ? 'Disabled' : 'Active'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        value={u.role}
-                        onValueChange={(value) => handleRoleChange(u.id, value as UserRole)}
-                        disabled={u.disabled}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="employee">Employee</SelectItem>
-                          <SelectItem value="client">Client</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant={u.disabled ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleToggleStatus(u.id, !!u.disabled)}
-                        disabled={u.id === user?.id}
-                      >
-                        {u.disabled ? (
-                          <>
-                            <UserCheck className="mr-1 h-4 w-4" />
-                            Enable
-                          </>
-                        ) : (
-                          <>
-                            <UserX className="mr-1 h-4 w-4" />
-                            Disable
-                          </>
-                        )}
-                      </Button>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="font-semibold">Name</TableHead>
+                    <TableHead className="font-semibold">Email</TableHead>
+                    <TableHead className="font-semibold">Role</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="font-semibold">Change Role</TableHead>
+                    <TableHead className="font-semibold">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {users.map((u) => (
+                    <TableRow key={u.id} className={u.disabled ? 'opacity-50' : ''}>
+                      <TableCell className="font-medium">{u.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{u.email}</TableCell>
+                      <TableCell>
+                        <Badge variant={getRoleBadgeVariant(u.role)} className="capitalize">
+                          {u.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={u.disabled ? 'destructive' : 'default'}
+                          className={!u.disabled ? 'bg-success hover:bg-success/90' : ''}
+                        >
+                          {u.disabled ? 'Disabled' : 'Active'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={u.role}
+                          onValueChange={(value) => handleRoleChange(u.id, value as UserRole)}
+                          disabled={u.disabled}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="employee">Employee</SelectItem>
+                            <SelectItem value="client">Client</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant={u.disabled ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => handleToggleStatus(u.id, !!u.disabled)}
+                          disabled={u.id === user?.id}
+                          className="gap-1"
+                        >
+                          {u.disabled ? (
+                            <>
+                              <UserCheck className="h-4 w-4" />
+                              Enable
+                            </>
+                          ) : (
+                            <>
+                              <UserX className="h-4 w-4" />
+                              Disable
+                            </>
+                          )}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       </main>

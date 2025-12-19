@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjectManagement, Currency, RevenueStatus } from '@/contexts/ProjectManagementContext';
+import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -9,8 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, Plus, TrendingUp, Trash2, DollarSign, Wallet, PiggyBank, Clock } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Plus, TrendingUp, Trash2, DollarSign, Wallet, PiggyBank, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 
 const CURRENCIES: Currency[] = ['USD', 'EUR', 'GBP', 'CAD', 'AUD'];
@@ -25,7 +25,6 @@ const CURRENCY_SYMBOLS: Record<Currency, string> = {
 
 export default function Revenue() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const { 
     getAllRevenues, 
     createRevenue, 
@@ -102,81 +101,64 @@ export default function Revenue() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-600">
-              <TrendingUp className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="font-semibold">Revenue & Profit</h1>
-              <p className="text-xs text-muted-foreground">Track income and calculate profit</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">
-              {user?.name} ({user?.role})
-            </span>
-          </div>
-        </div>
-      </header>
+    <div className="page-container">
+      <AppHeader 
+        title="Revenue & Profit" 
+        subtitle="Track income and calculate profit"
+        icon={<TrendingUp className="h-5 w-5 text-primary-foreground" />}
+      />
 
-      <main className="container mx-auto p-6">
+      <main className="content-container">
         {/* Financial Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-4 mb-6">
-          <Card className="border-green-200 bg-green-50 dark:bg-green-950/20">
+        <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <Card className="card-premium hover-lift animate-fade-in border-l-4 border-l-success" style={{ animationDelay: '0.1s' }}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-green-600" />
+              <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                <DollarSign className="h-4 w-4 text-success" />
                 Paid Revenue
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">${totalPaidRevenue.toFixed(2)}</div>
+              <div className="text-2xl sm:text-3xl font-bold font-display text-success">${totalPaidRevenue.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground mt-1">Confirmed payments received</p>
             </CardContent>
           </Card>
 
-          <Card className="border-blue-200 bg-blue-50 dark:bg-blue-950/20">
+          <Card className="card-premium hover-lift animate-fade-in border-l-4 border-l-primary" style={{ animationDelay: '0.15s' }}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Clock className="h-4 w-4 text-blue-600" />
+              <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                <Clock className="h-4 w-4 text-primary" />
                 Pending Revenue
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">${totalPendingRevenue.toFixed(2)}</div>
+              <div className="text-2xl sm:text-3xl font-bold font-display text-primary">${totalPendingRevenue.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground mt-1">Awaiting payment</p>
             </CardContent>
           </Card>
 
-          <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
+          <Card className="card-premium hover-lift animate-fade-in border-l-4 border-l-warning" style={{ animationDelay: '0.2s' }}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Wallet className="h-4 w-4 text-amber-600" />
+              <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                <Wallet className="h-4 w-4 text-warning" />
                 Employee Payments
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-amber-600">${totalPayments.toFixed(2)}</div>
+              <div className="text-2xl sm:text-3xl font-bold font-display text-warning">${totalPayments.toFixed(2)}</div>
               <p className="text-xs text-muted-foreground mt-1">Paid to employees</p>
             </CardContent>
           </Card>
 
-          <Card className={`border-2 ${profit >= 0 ? 'border-emerald-400 bg-emerald-50 dark:bg-emerald-950/20' : 'border-red-400 bg-red-50 dark:bg-red-950/20'}`}>
+          <Card className={`card-premium hover-lift animate-fade-in border-l-4 ${profit >= 0 ? 'border-l-success' : 'border-l-destructive'}`} style={{ animationDelay: '0.25s' }}>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <PiggyBank className={`h-4 w-4 ${profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`} />
+              <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
+                <PiggyBank className={`h-4 w-4 ${profit >= 0 ? 'text-success' : 'text-destructive'}`} />
                 Profit
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${profit >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+              <div className={`text-2xl sm:text-3xl font-bold font-display ${profit >= 0 ? 'text-success' : 'text-destructive'}`}>
                 {profit >= 0 ? '+' : '-'}${Math.abs(profit).toFixed(2)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">Paid revenue minus payments</p>
@@ -185,17 +167,29 @@ export default function Revenue() {
         </div>
 
         {/* Profit Explanation */}
-        <Card className="mb-6 bg-muted/50">
-          <CardContent className="pt-4">
-            <h3 className="font-medium mb-2">How Profit is Calculated</h3>
-            <p className="text-sm text-muted-foreground">
-              <strong>Profit = Paid Revenue - Paid Employee Payments</strong>
+        <Card className="card-premium mb-8 animate-fade-in bg-muted/30" style={{ animationDelay: '0.3s' }}>
+          <CardContent className="pt-5">
+            <h3 className="font-display font-semibold mb-3">How Profit is Calculated</h3>
+            <p className="text-sm text-muted-foreground mb-3">
+              <strong className="text-foreground">Profit = Paid Revenue - Paid Employee Payments</strong>
             </p>
-            <ul className="text-sm text-muted-foreground mt-2 space-y-1">
-              <li>• <strong>Paid Revenue:</strong> Only revenue marked as "Paid" counts toward totals</li>
-              <li>• <strong>Pending Revenue:</strong> Visible in the table but NOT included in profit calculation</li>
-              <li>• <strong>Employee Payments:</strong> Only payments marked as "Paid" are subtracted</li>
-              <li>• <strong>Assumption:</strong> All amounts are treated as USD (no currency conversion)</li>
+            <ul className="text-sm text-muted-foreground space-y-1.5">
+              <li className="flex items-start gap-2">
+                <span className="text-success">•</span>
+                <span><strong className="text-foreground">Paid Revenue:</strong> Only revenue marked as "Paid" counts toward totals</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-primary">•</span>
+                <span><strong className="text-foreground">Pending Revenue:</strong> Visible in the table but NOT included in profit calculation</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-warning">•</span>
+                <span><strong className="text-foreground">Employee Payments:</strong> Only payments marked as "Paid" are subtracted</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-muted-foreground">•</span>
+                <span><strong className="text-foreground">Assumption:</strong> All amounts are treated as USD (no currency conversion)</span>
+              </li>
             </ul>
           </CardContent>
         </Card>
@@ -203,16 +197,16 @@ export default function Revenue() {
         {/* Create Revenue Button */}
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
-            <Button className="mb-4">
-              <Plus className="mr-2 h-4 w-4" />
+            <Button className="mb-6 gap-2 shadow-premium-sm hover:shadow-premium-md transition-shadow animate-fade-in" style={{ animationDelay: '0.35s' }}>
+              <Plus className="h-4 w-4" />
               Record Revenue
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Record New Revenue</DialogTitle>
+              <DialogTitle className="font-display">Record New Revenue</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-4 pt-2">
               <div className="space-y-2">
                 <Label>Client</Label>
                 <Select 
@@ -294,7 +288,7 @@ export default function Revenue() {
                 />
               </div>
 
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-lg">
                 New revenue is created as "Pending". Mark it as "Paid" once payment is confirmed.
               </p>
 
@@ -310,70 +304,75 @@ export default function Revenue() {
         </Dialog>
 
         {/* Revenue Table */}
-        <Card>
+        <Card className="card-premium animate-fade-in" style={{ animationDelay: '0.4s' }}>
           <CardHeader>
-            <CardTitle>Revenue Records</CardTitle>
+            <CardTitle className="font-display">Revenue Records</CardTitle>
             <CardDescription>All income from clients (only "Paid" counts toward profit)</CardDescription>
           </CardHeader>
           <CardContent>
             {revenues.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No revenue recorded yet.</p>
+              <div className="text-center py-12">
+                <TrendingUp className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                <p className="text-muted-foreground">No revenue recorded yet.</p>
+              </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Client</TableHead>
-                    <TableHead>Project</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {revenues.map((revenue) => (
-                    <TableRow key={revenue.id} className={revenue.status === 'pending' ? 'opacity-70' : ''}>
-                      <TableCell className="font-medium">
-                        {getClientName(revenue.clientId)}
-                      </TableCell>
-                      <TableCell>{getProjectName(revenue.projectId)}</TableCell>
-                      <TableCell className={`font-medium ${revenue.status === 'paid' ? 'text-green-600' : 'text-muted-foreground'}`}>
-                        {CURRENCY_SYMBOLS[revenue.currency]}{revenue.amount.toFixed(2)} {revenue.currency}
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(revenue.dateReceived), 'MMM d, yyyy')}
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant={revenue.status === 'paid' ? 'default' : 'secondary'}
-                          className={revenue.status === 'paid' ? 'bg-green-600' : 'bg-blue-500'}
-                        >
-                          {revenue.status === 'paid' ? 'Paid' : 'Pending'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleToggleStatus(revenue.id, revenue.status)}
-                          >
-                            Mark as {revenue.status === 'paid' ? 'Pending' : 'Paid'}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive"
-                            onClick={() => handleDeleteRevenue(revenue.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="font-semibold">Client</TableHead>
+                      <TableHead className="font-semibold">Project</TableHead>
+                      <TableHead className="font-semibold">Amount</TableHead>
+                      <TableHead className="font-semibold">Date</TableHead>
+                      <TableHead className="font-semibold">Status</TableHead>
+                      <TableHead className="font-semibold">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {revenues.map((revenue) => (
+                      <TableRow key={revenue.id} className={revenue.status === 'pending' ? 'opacity-70' : ''}>
+                        <TableCell className="font-medium">
+                          {getClientName(revenue.clientId)}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{getProjectName(revenue.projectId)}</TableCell>
+                        <TableCell className={`font-semibold ${revenue.status === 'paid' ? 'text-success' : 'text-muted-foreground'}`}>
+                          {CURRENCY_SYMBOLS[revenue.currency]}{revenue.amount.toFixed(2)} {revenue.currency}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {format(new Date(revenue.dateReceived), 'MMM d, yyyy')}
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={revenue.status === 'paid' ? 'default' : 'secondary'}
+                            className={revenue.status === 'paid' ? 'bg-success hover:bg-success/90' : 'bg-primary hover:bg-primary/90 text-primary-foreground'}
+                          >
+                            {revenue.status === 'paid' ? 'Paid' : 'Pending'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleToggleStatus(revenue.id, revenue.status)}
+                            >
+                              Mark as {revenue.status === 'paid' ? 'Pending' : 'Paid'}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDeleteRevenue(revenue.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
