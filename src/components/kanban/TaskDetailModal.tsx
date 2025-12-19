@@ -48,7 +48,7 @@ export default function TaskDetailModal({
   const [newComment, setNewComment] = useState('');
 
   const canEdit = !readOnly && (user?.role === 'admin' || user?.role === 'employee');
-  const canComment = user?.role === 'admin' || user?.role === 'employee';
+  const canComment = user?.role === 'admin' || user?.role === 'employee' || user?.role === 'client';
   const canDelete = user?.role === 'admin';
 
   const handleSave = () => {
@@ -219,9 +219,6 @@ export default function TaskDetailModal({
                     Post
                   </Button>
                 </div>
-              )}
-              {!canComment && (
-                <p className="text-xs text-muted-foreground italic">Clients can view comments but cannot post.</p>
               )}
             </div>
           </div>
