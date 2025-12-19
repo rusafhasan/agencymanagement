@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProjectManagement } from '@/contexts/ProjectManagementContext';
+import AppHeader from '@/components/layout/AppHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -10,7 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Plus, Kanban, Trash2, Settings, Users } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Plus, Kanban, Trash2, Settings, Users, FolderOpen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function WorkspaceDetail() {
@@ -42,8 +44,8 @@ export default function WorkspaceDetail() {
 
   if (!workspace) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Workspace not found</p>
+      <div className="page-container flex items-center justify-center">
+        <p className="text-muted-foreground">Workspace not found</p>
       </div>
     );
   }
@@ -103,34 +105,18 @@ export default function WorkspaceDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/workspaces')}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-              <Kanban className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="font-semibold">{workspace.name}</h1>
-              <p className="text-xs text-muted-foreground">Workspace Projects</p>
-            </div>
-          </div>
-          <span className="text-sm text-muted-foreground">
-            {user?.name} ({user?.role})
-          </span>
-        </div>
-      </header>
+    <div className="page-container">
+      <AppHeader 
+        title={workspace.name}
+        subtitle="Workspace Projects"
+        icon={<Kanban className="h-5 w-5 text-primary-foreground" />}
+      />
 
-      {/* Main Content */}
-      <main className="container mx-auto p-6">
-        <div className="flex items-center justify-between mb-6">
+      <main className="content-container">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 animate-fade-in">
           <div>
-            <h2 className="text-2xl font-bold">Projects</h2>
-            <p className="text-muted-foreground">
+            <h2 className="section-heading">Projects</h2>
+            <p className="section-subheading">
               {isAdmin ? 'Create and manage projects in this workspace' : 'View projects assigned to you'}
             </p>
           </div>
@@ -138,16 +124,16 @@ export default function WorkspaceDetail() {
           {isAdmin && (
             <Dialog open={isCreateOpen} onOpenChange={(open) => { setIsCreateOpen(open); if (!open) resetForm(); }}>
               <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
+                <Button className="gap-2 shadow-premium-sm hover:shadow-premium-md transition-shadow">
+                  <Plus className="h-4 w-4" />
                   New Project
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle>Create New Project</DialogTitle>
+                  <DialogTitle className="font-display">Create New Project</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
+                <div className="space-y-4 pt-2">
                   <div className="space-y-2">
                     <Label>Project Name</Label>
                     <Input
@@ -170,18 +156,20 @@ export default function WorkspaceDetail() {
                     {employees.length === 0 ? (
                       <p className="text-xs text-muted-foreground">No employees available</p>
                     ) : (
-                      <div className="space-y-2 max-h-40 overflow-y-auto">
-                        {employees.map(emp => (
-                          <div key={emp.id} className="flex items-center gap-2">
-                            <Checkbox
-                              id={emp.id}
-                              checked={selectedEmployeeIds.includes(emp.id)}
-                              onCheckedChange={() => toggleEmployee(emp.id)}
-                            />
-                            <label htmlFor={emp.id} className="text-sm">{emp.name}</label>
-                          </div>
-                        ))}
-                      </div>
+                      <ScrollArea className="h-32 rounded-md border p-3">
+                        <div className="space-y-3">
+                          {employees.map(emp => (
+                            <div key={emp.id} className="flex items-center gap-3">
+                              <Checkbox
+                                id={emp.id}
+                                checked={selectedEmployeeIds.includes(emp.id)}
+                                onCheckedChange={() => toggleEmployee(emp.id)}
+                              />
+                              <label htmlFor={emp.id} className="text-sm cursor-pointer">{emp.name}</label>
+                            </div>
+                          ))}
+                        </div>
+                      </ScrollArea>
                     )}
                   </div>
                   <Button onClick={handleCreate} className="w-full">
@@ -194,33 +182,37 @@ export default function WorkspaceDetail() {
         </div>
 
         {projects.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Kanban className="h-12 w-12 text-muted-foreground mb-4" />
+          <Card className="card-premium animate-fade-in">
+            <CardContent className="flex flex-col items-center justify-center py-16">
+              <FolderOpen className="h-16 w-16 text-muted-foreground/30 mb-4" />
               <p className="text-muted-foreground">
                 {isAdmin ? 'No projects yet. Create one to get started!' : 'No projects assigned to you in this workspace.'}
               </p>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {projects.map(project => {
+          <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {projects.map((project, i) => {
               const taskCount = getTasksForProject(project.id).length;
+              const completedTasks = getTasksForProject(project.id).filter(t => t.status === 'completed').length;
+              const progress = taskCount > 0 ? Math.round((completedTasks / taskCount) * 100) : 0;
+              
               return (
                 <Card
                   key={project.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  className="card-premium hover-lift cursor-pointer animate-fade-in"
+                  style={{ animationDelay: `${0.1 + i * 0.05}s` }}
                   onClick={() => navigate(`/projects/${project.id}`)}
                 >
-                  <CardHeader className="pb-2">
+                  <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
-                      <CardTitle className="text-lg">{project.name}</CardTitle>
+                      <CardTitle className="text-lg font-display">{project.name}</CardTitle>
                       {isAdmin && (
                         <div className="flex gap-1">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
                             onClick={(e) => {
                               e.stopPropagation();
                               openEditDialog(project);
@@ -231,7 +223,7 @@ export default function WorkspaceDetail() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="text-destructive h-8 w-8"
+                            className="text-destructive hover:bg-destructive/10 h-8 w-8"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDelete(project.id, project.name);
@@ -243,18 +235,25 @@ export default function WorkspaceDetail() {
                       )}
                     </div>
                     {project.description && (
-                      <CardDescription className="line-clamp-2">
+                      <CardDescription className="line-clamp-2 mt-1">
                         {project.description}
                       </CardDescription>
                     )}
                   </CardHeader>
-                  <CardContent className="space-y-2">
-                    <Badge variant="secondary">
-                      {taskCount} task{taskCount !== 1 ? 's' : ''}
-                    </Badge>
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="secondary">
+                        {taskCount} task{taskCount !== 1 ? 's' : ''}
+                      </Badge>
+                      {taskCount > 0 && (
+                        <Badge variant="outline" className="text-xs">
+                          {progress}% complete
+                        </Badge>
+                      )}
+                    </div>
                     {project.assignedEmployeeIds.length > 0 && (
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Users className="h-3 w-3" />
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Users className="h-3.5 w-3.5" />
                         {project.assignedEmployeeIds.length} employee{project.assignedEmployeeIds.length !== 1 ? 's' : ''} assigned
                       </div>
                     )}
@@ -267,44 +266,37 @@ export default function WorkspaceDetail() {
 
         {/* Edit Project Dialog */}
         <Dialog open={isEditOpen} onOpenChange={(open) => { setIsEditOpen(open); if (!open) resetForm(); }}>
-          <DialogContent>
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Edit Project</DialogTitle>
+              <DialogTitle className="font-display">Edit Project</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-4 pt-2">
               <div className="space-y-2">
                 <Label>Project Name</Label>
-                <Input
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                />
+                <Input value={newName} onChange={(e) => setNewName(e.target.value)} />
               </div>
               <div className="space-y-2">
                 <Label>Description</Label>
-                <Textarea
-                  value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
-                  rows={3}
-                />
+                <Textarea value={newDescription} onChange={(e) => setNewDescription(e.target.value)} rows={3} />
               </div>
               <div className="space-y-2">
                 <Label>Assigned Employees</Label>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {employees.map(emp => (
-                    <div key={emp.id} className="flex items-center gap-2">
-                      <Checkbox
-                        id={`edit-${emp.id}`}
-                        checked={selectedEmployeeIds.includes(emp.id)}
-                        onCheckedChange={() => toggleEmployee(emp.id)}
-                      />
-                      <label htmlFor={`edit-${emp.id}`} className="text-sm">{emp.name}</label>
-                    </div>
-                  ))}
-                </div>
+                <ScrollArea className="h-32 rounded-md border p-3">
+                  <div className="space-y-3">
+                    {employees.map(emp => (
+                      <div key={emp.id} className="flex items-center gap-3">
+                        <Checkbox
+                          id={`edit-${emp.id}`}
+                          checked={selectedEmployeeIds.includes(emp.id)}
+                          onCheckedChange={() => toggleEmployee(emp.id)}
+                        />
+                        <label htmlFor={`edit-${emp.id}`} className="text-sm cursor-pointer">{emp.name}</label>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
               </div>
-              <Button onClick={handleEdit} className="w-full">
-                Save Changes
-              </Button>
+              <Button onClick={handleEdit} className="w-full">Save Changes</Button>
             </div>
           </DialogContent>
         </Dialog>
