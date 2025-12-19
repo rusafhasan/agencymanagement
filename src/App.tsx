@@ -8,6 +8,9 @@ import Auth from "./pages/Auth";
 import AdminDashboard from "./pages/AdminDashboard";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import ClientDashboard from "./pages/ClientDashboard";
+import Workspaces from "./pages/Workspaces";
+import WorkspaceDetail from "./pages/WorkspaceDetail";
+import ProjectBoard from "./pages/ProjectBoard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -19,37 +22,17 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* Public routes */}
           <Route path="/" element={<Navigate to="/auth" replace />} />
           <Route path="/auth" element={<Auth />} />
 
-          {/* Protected routes */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/employee"
-            element={
-              <ProtectedRoute allowedRoles={["employee"]}>
-                <EmployeeDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/client"
-            element={
-              <ProtectedRoute allowedRoles={["client"]}>
-                <ClientDashboard />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/employee" element={<ProtectedRoute allowedRoles={["employee"]}><EmployeeDashboard /></ProtectedRoute>} />
+          <Route path="/client" element={<ProtectedRoute allowedRoles={["client"]}><ClientDashboard /></ProtectedRoute>} />
 
-          {/* Catch-all */}
+          <Route path="/workspaces" element={<ProtectedRoute><Workspaces /></ProtectedRoute>} />
+          <Route path="/workspaces/:workspaceId" element={<ProtectedRoute><WorkspaceDetail /></ProtectedRoute>} />
+          <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectBoard /></ProtectedRoute>} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

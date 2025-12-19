@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, User, FolderOpen, FileText, HelpCircle } from 'lucide-react';
+import { LogOut, User, FolderKanban } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function ClientDashboard() {
@@ -48,63 +48,17 @@ export default function ClientDashboard() {
           </p>
         </div>
 
-        {/* Quick Access */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">My Projects</CardTitle>
-              <FolderOpen className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">
-                Connect backend to see projects
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Documents</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">
-                Connect backend to see files
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Support</CardTitle>
-              <HelpCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">--</div>
-              <p className="text-xs text-muted-foreground">
-                Connect backend for support
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Placeholder Content */}
-        <Card className="mt-8">
+        {/* Quick Actions */}
+        <Card>
           <CardHeader>
-            <CardTitle>Welcome to Your Portal</CardTitle>
-            <CardDescription>
-              This is your client portal. When connected to a backend, you'll be able to:
-            </CardDescription>
+            <CardTitle>Your Workspace</CardTitle>
+            <CardDescription>View your projects and track progress (read-only)</CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="list-inside list-disc space-y-2 text-muted-foreground">
-              <li>View your active projects and their status</li>
-              <li>Access shared documents and deliverables</li>
-              <li>Submit support requests</li>
-              <li>Communicate directly with your assigned team</li>
-            </ul>
+            <Button onClick={() => navigate('/workspaces')} className="gap-2">
+              <FolderKanban className="h-4 w-4" />
+              View My Projects
+            </Button>
           </CardContent>
         </Card>
       </main>
