@@ -41,6 +41,20 @@ export interface Comment {
   createdAt: string;
 }
 
+export type PaymentStatus = 'unpaid' | 'paid';
+export type Currency = 'USD' | 'EUR' | 'GBP' | 'CAD' | 'AUD';
+
+export interface Payment {
+  id: string;
+  employeeId: string;
+  projectId: string;
+  amount: number;
+  currency: Currency;
+  status: PaymentStatus;
+  date: string;
+  createdAt: string;
+}
+
 interface ProjectManagementContextType {
   // Workspaces
   workspaces: Workspace[];
@@ -70,6 +84,13 @@ interface ProjectManagementContextType {
   createComment: (taskId: string, content: string) => Comment | null;
   getCommentsForTask: (taskId: string) => Comment[];
 
+  // Payments
+  payments: Payment[];
+  createPayment: (employeeId: string, projectId: string, amount: number, currency: Currency, date: string) => Payment;
+  updatePayment: (id: string, updates: Partial<Pick<Payment, 'status' | 'amount' | 'currency' | 'date'>>) => void;
+  deletePayment: (id: string) => void;
+  getPaymentsForUser: () => Payment[];
+
   // Helpers
   getUsers: () => User[];
   getClients: () => User[];
@@ -83,6 +104,7 @@ const STORAGE_KEYS = {
   projects: 'pm_projects',
   tasks: 'pm_tasks',
   comments: 'pm_comments',
+  payments: 'pm_payments',
 };
 
 export function ProjectManagementProvider({ children }: { children: ReactNode }) {
@@ -91,6 +113,7 @@ export function ProjectManagementProvider({ children }: { children: ReactNode })
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -99,11 +122,13 @@ export function ProjectManagementProvider({ children }: { children: ReactNode })
       projects: localStorage.getItem(STORAGE_KEYS.projects),
       tasks: localStorage.getItem(STORAGE_KEYS.tasks),
       comments: localStorage.getItem(STORAGE_KEYS.comments),
+      payments: localStorage.getItem(STORAGE_KEYS.payments),
     };
     if (stored.workspaces) setWorkspaces(JSON.parse(stored.workspaces));
     if (stored.projects) setProjects(JSON.parse(stored.projects));
     if (stored.tasks) setTasks(JSON.parse(stored.tasks));
     if (stored.comments) setComments(JSON.parse(stored.comments));
+    if (stored.payments) setPayments(JSON.parse(stored.payments));
   }, []);
 
   // Save to localStorage on changes
@@ -119,6 +144,9 @@ export function ProjectManagementProvider({ children }: { children: ReactNode })
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.comments, JSON.stringify(comments));
   }, [comments]);
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.payments, JSON.stringify(payments));
+  }, [payments]);
 
   // Helper functions
   const getUsers = () => getAllUsers();
@@ -257,8 +285,6 @@ export function ProjectManagementProvider({ children }: { children: ReactNode })
   // Comment functions
   const createComment = (taskId: string, content: string): Comment | null => {
     if (!user) return null;
-    // Only admin and employees can comment
-    if (user.role === 'client') return null;
     
     const comment: Comment = {
       id: crypto.randomUUID(),
@@ -276,6 +302,37 @@ export function ProjectManagementProvider({ children }: { children: ReactNode })
     return comments.filter(c => c.taskId === taskId).sort((a, b) => 
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
+  };
+
+  // Payment functions
+  const createPayment = (employeeId: string, projectId: string, amount: number, currency: Currency, date: string): Payment => {
+    const payment: Payment = {
+      id: crypto.randomUUID(),
+      employeeId,
+      projectId,
+      amount,
+      currency,
+      status: 'unpaid',
+      date,
+      createdAt: new Date().toISOString(),
+    };
+    setPayments(prev => [...prev, payment]);
+    return payment;
+  };
+
+  const updatePayment = (id: string, updates: Partial<Pick<Payment, 'status' | 'amount' | 'currency' | 'date'>>) => {
+    setPayments(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+  };
+
+  const deletePayment = (id: string) => {
+    setPayments(prev => prev.filter(p => p.id !== id));
+  };
+
+  const getPaymentsForUser = (): Payment[] => {
+    if (!user) return [];
+    if (user.role === 'admin') return payments;
+    if (user.role === 'employee') return payments.filter(p => p.employeeId === user.id);
+    return []; // Clients can't see payments
   };
 
   return (
@@ -300,6 +357,11 @@ export function ProjectManagementProvider({ children }: { children: ReactNode })
       comments,
       createComment,
       getCommentsForTask,
+      payments,
+      createPayment,
+      updatePayment,
+      deletePayment,
+      getPaymentsForUser,
       getUsers,
       getClients,
       getEmployees,

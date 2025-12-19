@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, UserCircle, FolderKanban } from 'lucide-react';
+import { LogOut, UserCircle, FolderKanban, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function EmployeeDashboard() {
@@ -58,6 +58,10 @@ export default function EmployeeDashboard() {
             <Button onClick={() => navigate('/workspaces')} className="gap-2">
               <FolderKanban className="h-4 w-4" />
               Open My Projects
+            </Button>
+            <Button onClick={() => navigate('/payments')} variant="outline" className="gap-2">
+              <DollarSign className="h-4 w-4" />
+              View My Payments
             </Button>
           </CardContent>
         </Card>
