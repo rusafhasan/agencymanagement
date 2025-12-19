@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Shield, Users, Briefcase, UserCheck, UserX, FolderKanban, DollarSign, TrendingUp } from 'lucide-react';
+import { LogOut, Shield, Users, Briefcase, UserCheck, UserX, FolderKanban, DollarSign, TrendingUp, User as UserIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
@@ -89,6 +89,10 @@ export default function AdminDashboard() {
             <span className="text-sm text-muted-foreground">
               Welcome, {user?.name}
             </span>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/profile')}>
+              <UserIcon className="mr-2 h-4 w-4" />
+              Profile
+            </Button>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
               Sign Out

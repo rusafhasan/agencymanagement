@@ -3,12 +3,20 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 // User roles - easy to extend later
 export type UserRole = 'admin' | 'employee' | 'client';
 
+export interface UserProfile {
+  phone?: string;
+  address?: string;
+  companyName?: string;
+  profilePicture?: string; // base64 data URL for demo purposes
+}
+
 export interface User {
   id: string;
   email: string;
   name: string;
   role: UserRole;
   disabled?: boolean;
+  profile?: UserProfile;
 }
 
 interface AuthContextType {
@@ -20,6 +28,8 @@ interface AuthContextType {
   getAllUsers: () => User[];
   updateUserRole: (userId: string, newRole: UserRole) => boolean;
   toggleUserStatus: (userId: string) => boolean;
+  updateProfile: (updates: { name?: string; profile?: UserProfile }) => boolean;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -177,8 +187,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return false;
   };
 
+  const updateProfile = (updates: { name?: string; profile?: UserProfile }): boolean => {
+    if (!user) return false;
+
+    const users = getStoredUsers();
+    for (const email in users) {
+      if (users[email].user.id === user.id) {
+        if (updates.name) {
+          users[email].user.name = updates.name;
+        }
+        if (updates.profile) {
+          users[email].user.profile = { ...users[email].user.profile, ...updates.profile };
+        }
+        saveUsers(users);
+        
+        // Update current user state
+        const updatedUser = { ...users[email].user };
+        setUser(updatedUser);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const changePassword = async (oldPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    if (!user) return { success: false, error: 'Not logged in' };
+
+    const users = getStoredUsers();
+    const userRecord = users[user.email];
+
+    if (!userRecord) {
+      return { success: false, error: 'User not found' };
+    }
+
+    if (userRecord.password !== oldPassword) {
+      return { success: false, error: 'Current password is incorrect' };
+    }
+
+    if (newPassword.length < 6) {
+      return { success: false, error: 'New password must be at least 6 characters' };
+    }
+
+    users[user.email].password = newPassword;
+    saveUsers(users);
+    return { success: true };
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, logout, getAllUsers, updateUserRole, toggleUserStatus }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isLoading, 
+      login, 
+      signup, 
+      logout, 
+      getAllUsers, 
+      updateUserRole, 
+      toggleUserStatus,
+      updateProfile,
+      changePassword,
+    }}>
       {children}
     </AuthContext.Provider>
   );

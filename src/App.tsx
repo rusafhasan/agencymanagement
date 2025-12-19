@@ -13,6 +13,7 @@ import WorkspaceDetail from "./pages/WorkspaceDetail";
 import ProjectBoard from "./pages/ProjectBoard";
 import Payments from "./pages/Payments";
 import Revenue from "./pages/Revenue";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
           <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectBoard /></ProtectedRoute>} />
           <Route path="/payments" element={<ProtectedRoute allowedRoles={["admin", "employee"]}><Payments /></ProtectedRoute>} />
           <Route path="/revenue" element={<ProtectedRoute allowedRoles={["admin"]}><Revenue /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>

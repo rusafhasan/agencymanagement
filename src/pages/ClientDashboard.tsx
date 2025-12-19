@@ -1,7 +1,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, User, FolderKanban } from 'lucide-react';
+import { LogOut, User as UserIcon, FolderKanban } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function ClientDashboard() {
@@ -20,7 +20,7 @@ export default function ClientDashboard() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
-              <User className="h-5 w-5 text-secondary-foreground" />
+              <UserIcon className="h-5 w-5 text-secondary-foreground" />
             </div>
             <div>
               <h1 className="font-semibold">Client Portal</h1>
@@ -31,6 +31,10 @@ export default function ClientDashboard() {
             <span className="text-sm text-muted-foreground">
               Welcome, {user?.name}
             </span>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/profile')}>
+              <UserIcon className="mr-2 h-4 w-4" />
+              Profile
+            </Button>
             <Button variant="outline" size="sm" onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
               Sign Out
