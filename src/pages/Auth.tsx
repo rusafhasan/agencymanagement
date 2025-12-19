@@ -48,13 +48,9 @@ export default function Auth() {
         }
 
         const result = await login(email, password);
-        if (result.success) {
-          const stored = localStorage.getItem('agency_dashboard_user');
-          if (stored) {
-            const user = JSON.parse(stored);
-            navigate(getRedirectPath(user.role));
-          }
-        } else {
+        if (result.success && result.user) {
+          navigate(getRedirectPath(result.user.role));
+        } else if (!result.success) {
           toast({ title: 'Login failed', description: result.error, variant: 'destructive' });
         }
       } else {
@@ -67,10 +63,10 @@ export default function Auth() {
         }
 
         const result = await signup(email, password, name);
-        if (result.success) {
+        if (result.success && result.user) {
           toast({ title: 'Account created', description: 'Welcome! You have been registered as a client.' });
-          navigate('/client');
-        } else {
+          navigate(getRedirectPath(result.user.role));
+        } else if (!result.success) {
           toast({ title: 'Signup failed', description: result.error, variant: 'destructive' });
         }
       }
