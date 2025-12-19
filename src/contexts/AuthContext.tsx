@@ -160,12 +160,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Hash the password before storing
     const { hash, salt } = await hashPassword(password);
 
-    // All new signups are clients by default - only admin can change roles
+    // First user becomes admin, all others are clients by default
+    const isFirstUser = Object.keys(users).length === 0;
+    
     const newUser: User = {
       id: crypto.randomUUID(),
       email: emailLower,
       name: nameValidation.data,
-      role: 'client',
+      role: isFirstUser ? 'admin' : 'client',
       disabled: false,
     };
 
