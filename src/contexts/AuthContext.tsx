@@ -8,6 +8,7 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
+  disabled?: boolean;
 }
 
 interface AuthContextType {
@@ -18,6 +19,7 @@ interface AuthContextType {
   logout: () => void;
   getAllUsers: () => User[];
   updateUserRole: (userId: string, newRole: UserRole) => boolean;
+  toggleUserStatus: (userId: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -34,6 +36,7 @@ const ADMIN_USER: User = {
   email: ADMIN_EMAIL,
   name: 'Admin',
   role: 'admin',
+  disabled: false,
 };
 
 // Initialize users with admin account
@@ -92,6 +95,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: 'Incorrect password' };
     }
 
+    if (userRecord.user.disabled) {
+      return { success: false, error: 'Your account has been disabled. Please contact an administrator.' };
+    }
+
     setUser(userRecord.user);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(userRecord.user));
     return { success: true };
@@ -117,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email: emailLower,
       name,
       role: 'client',
+      disabled: false,
     };
 
     users[emailLower] = { password, user: newUser };
@@ -152,8 +160,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return false;
   };
 
+  const toggleUserStatus = (userId: string): boolean => {
+    if (!user || user.role !== 'admin') return false;
+    
+    // Prevent disabling yourself
+    if (user.id === userId) return false;
+
+    const users = getStoredUsers();
+    for (const email in users) {
+      if (users[email].user.id === userId) {
+        users[email].user.disabled = !users[email].user.disabled;
+        saveUsers(users);
+        return true;
+      }
+    }
+    return false;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, signup, logout, getAllUsers, updateUserRole }}>
+    <AuthContext.Provider value={{ user, isLoading, login, signup, logout, getAllUsers, updateUserRole, toggleUserStatus }}>
       {children}
     </AuthContext.Provider>
   );

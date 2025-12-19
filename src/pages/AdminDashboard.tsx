@@ -5,12 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Shield, Users, Briefcase, BarChart3 } from 'lucide-react';
+import { LogOut, Shield, Users, Briefcase, UserCheck, UserX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 export default function AdminDashboard() {
-  const { user, logout, getAllUsers, updateUserRole } = useAuth();
+  const { user, logout, getAllUsers, updateUserRole, toggleUserStatus } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
@@ -31,6 +31,25 @@ export default function AdminDashboard() {
       toast({
         title: 'Role updated',
         description: 'User role has been changed successfully.',
+      });
+    }
+  };
+
+  const handleToggleStatus = (userId: string, currentlyDisabled: boolean) => {
+    const success = toggleUserStatus(userId);
+    if (success) {
+      setUsers(getAllUsers());
+      toast({
+        title: currentlyDisabled ? 'Account enabled' : 'Account disabled',
+        description: currentlyDisabled 
+          ? 'User can now log in.' 
+          : 'User will not be able to log in.',
+      });
+    } else {
+      toast({
+        title: 'Cannot disable',
+        description: 'You cannot disable your own account.',
+        variant: 'destructive',
       });
     }
   };
@@ -123,9 +142,12 @@ export default function AdminDashboard() {
         {/* User Management */}
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle>User Management</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              User Management
+            </CardTitle>
             <CardDescription>
-              View all users and change their roles. Only you (admin) can assign roles.
+              View all users, change their roles, and enable or disable accounts. Only admins can access this section.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -134,13 +156,15 @@ export default function AdminDashboard() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Current Role</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Change Role</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {users.map((u) => (
-                  <TableRow key={u.id}>
+                  <TableRow key={u.id} className={u.disabled ? 'opacity-50' : ''}>
                     <TableCell className="font-medium">{u.name}</TableCell>
                     <TableCell>{u.email}</TableCell>
                     <TableCell>
@@ -149,9 +173,15 @@ export default function AdminDashboard() {
                       </Badge>
                     </TableCell>
                     <TableCell>
+                      <Badge variant={u.disabled ? 'destructive' : 'default'}>
+                        {u.disabled ? 'Disabled' : 'Active'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
                       <Select
                         value={u.role}
                         onValueChange={(value) => handleRoleChange(u.id, value as UserRole)}
+                        disabled={u.disabled}
                       >
                         <SelectTrigger className="w-32">
                           <SelectValue />
@@ -162,6 +192,26 @@ export default function AdminDashboard() {
                           <SelectItem value="client">Client</SelectItem>
                         </SelectContent>
                       </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant={u.disabled ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => handleToggleStatus(u.id, !!u.disabled)}
+                        disabled={u.id === user?.id}
+                      >
+                        {u.disabled ? (
+                          <>
+                            <UserCheck className="mr-1 h-4 w-4" />
+                            Enable
+                          </>
+                        ) : (
+                          <>
+                            <UserX className="mr-1 h-4 w-4" />
+                            Disable
+                          </>
+                        )}
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
