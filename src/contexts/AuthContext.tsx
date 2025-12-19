@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { hashPassword, verifyPassword } from '@/lib/crypto';
+import { emailSchema, passwordSchema, nameSchema, formatValidationErrors } from '@/lib/validation';
 
 // User roles - easy to extend later
 export type UserRole = 'admin' | 'employee' | 'client';
@@ -17,6 +19,12 @@ export interface User {
   role: UserRole;
   disabled?: boolean;
   profile?: UserProfile;
+}
+
+interface StoredUserRecord {
+  passwordHash: string;
+  salt: string;
+  user: User;
 }
 
 interface AuthContextType {
@@ -38,42 +46,31 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const STORAGE_KEY = 'agency_dashboard_user';
 const USERS_KEY = 'agency_dashboard_users';
 
-// Pre-seeded admin account
-const ADMIN_EMAIL = 'rusafhasan544@gmail.com';
-const ADMIN_PASSWORD = 'rusafhasan544@gmail.com';
-const ADMIN_USER: User = {
-  id: 'admin-001',
-  email: ADMIN_EMAIL,
-  name: 'Admin',
-  role: 'admin',
-  disabled: false,
-};
+/**
+ * SECURITY NOTE: This application uses client-side authentication with localStorage.
+ * This is suitable for demos/prototypes only. For production:
+ * - Use a proper backend with server-side authentication
+ * - Store passwords hashed with bcrypt/argon2 on the server
+ * - Use HTTP-only cookies for session management
+ * - Implement proper CSRF protection
+ * 
+ * Enable Lovable Cloud for proper authentication.
+ */
 
-// Initialize users with admin account
-const initializeUsers = (): Record<string, { password: string; user: User }> => {
+// Helper to get stored users with type safety
+const getStoredUsers = (): Record<string, StoredUserRecord> => {
   const stored = localStorage.getItem(USERS_KEY);
   if (stored) {
-    const users = JSON.parse(stored);
-    // Ensure admin always exists
-    if (!users[ADMIN_EMAIL]) {
-      users[ADMIN_EMAIL] = { password: ADMIN_PASSWORD, user: ADMIN_USER };
-      localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    try {
+      return JSON.parse(stored);
+    } catch {
+      return {};
     }
-    return users;
   }
-  // First time - create with admin
-  const initialUsers = {
-    [ADMIN_EMAIL]: { password: ADMIN_PASSWORD, user: ADMIN_USER }
-  };
-  localStorage.setItem(USERS_KEY, JSON.stringify(initialUsers));
-  return initialUsers;
+  return {};
 };
 
-const getStoredUsers = (): Record<string, { password: string; user: User }> => {
-  return initializeUsers();
-};
-
-const saveUsers = (users: Record<string, { password: string; user: User }>) => {
+const saveUsers = (users: Record<string, StoredUserRecord>) => {
   localStorage.setItem(USERS_KEY, JSON.stringify(users));
 };
 
@@ -83,25 +80,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Initialize on mount
   useEffect(() => {
-    initializeUsers(); // Ensure admin exists
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      setUser(JSON.parse(stored));
+      try {
+        setUser(JSON.parse(stored));
+      } catch {
+        localStorage.removeItem(STORAGE_KEY);
+      }
     }
     setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    // Validate inputs
+    const emailValidation = emailSchema.safeParse(email);
+    if (!emailValidation.success) {
+      return { success: false, error: formatValidationErrors(emailValidation.error) };
+    }
+
+    if (!password || password.length === 0) {
+      return { success: false, error: 'Password is required' };
+    }
+
     await new Promise(resolve => setTimeout(resolve, 500));
 
     const users = getStoredUsers();
-    const userRecord = users[email.toLowerCase()];
+    const validatedEmail = emailValidation.data;
+    const userRecord = users[validatedEmail];
 
     if (!userRecord) {
       return { success: false, error: 'No account found with this email' };
     }
 
-    if (userRecord.password !== password) {
+    // Verify password hash
+    const isValid = await verifyPassword(password, userRecord.passwordHash, userRecord.salt);
+    if (!isValid) {
       return { success: false, error: 'Incorrect password' };
     }
 
@@ -119,25 +132,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string,
     name: string
   ): Promise<{ success: boolean; error?: string }> => {
+    // Validate all inputs
+    const emailValidation = emailSchema.safeParse(email);
+    if (!emailValidation.success) {
+      return { success: false, error: formatValidationErrors(emailValidation.error) };
+    }
+
+    const passwordValidation = passwordSchema.safeParse(password);
+    if (!passwordValidation.success) {
+      return { success: false, error: formatValidationErrors(passwordValidation.error) };
+    }
+
+    const nameValidation = nameSchema.safeParse(name);
+    if (!nameValidation.success) {
+      return { success: false, error: formatValidationErrors(nameValidation.error) };
+    }
+
     await new Promise(resolve => setTimeout(resolve, 500));
 
     const users = getStoredUsers();
-    const emailLower = email.toLowerCase();
+    const emailLower = emailValidation.data;
 
     if (users[emailLower]) {
       return { success: false, error: 'An account with this email already exists' };
     }
 
+    // Hash the password before storing
+    const { hash, salt } = await hashPassword(password);
+
     // All new signups are clients by default - only admin can change roles
     const newUser: User = {
       id: crypto.randomUUID(),
       email: emailLower,
-      name,
+      name: nameValidation.data,
       role: 'client',
       disabled: false,
     };
 
-    users[emailLower] = { password, user: newUser };
+    users[emailLower] = { passwordHash: hash, salt, user: newUser };
     saveUsers(users);
 
     setUser(newUser);
@@ -190,6 +222,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const updateProfile = (updates: { name?: string; profile?: UserProfile }): boolean => {
     if (!user) return false;
 
+    // Validate name if provided
+    if (updates.name) {
+      const nameValidation = nameSchema.safeParse(updates.name);
+      if (!nameValidation.success) {
+        return false;
+      }
+      updates.name = nameValidation.data;
+    }
+
     const users = getStoredUsers();
     for (const email in users) {
       if (users[email].user.id === user.id) {
@@ -214,6 +255,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const changePassword = async (oldPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: 'Not logged in' };
 
+    // Validate new password
+    const passwordValidation = passwordSchema.safeParse(newPassword);
+    if (!passwordValidation.success) {
+      return { success: false, error: formatValidationErrors(passwordValidation.error) };
+    }
+
     const users = getStoredUsers();
     const userRecord = users[user.email];
 
@@ -221,15 +268,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: 'User not found' };
     }
 
-    if (userRecord.password !== oldPassword) {
+    // Verify old password
+    const isValid = await verifyPassword(oldPassword, userRecord.passwordHash, userRecord.salt);
+    if (!isValid) {
       return { success: false, error: 'Current password is incorrect' };
     }
 
-    if (newPassword.length < 6) {
-      return { success: false, error: 'New password must be at least 6 characters' };
-    }
-
-    users[user.email].password = newPassword;
+    // Hash and save new password
+    const { hash, salt } = await hashPassword(newPassword);
+    users[user.email].passwordHash = hash;
+    users[user.email].salt = salt;
     saveUsers(users);
     return { success: true };
   };
