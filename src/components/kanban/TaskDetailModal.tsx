@@ -78,8 +78,8 @@ export default function TaskDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center justify-between">
             <span>Task Details</span>
             {canDelete && (
@@ -90,8 +90,8 @@ export default function TaskDetailModal({
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto pr-2 min-h-0">
+          <div className="space-y-4 pb-4">
             {/* Title */}
             <div className="space-y-2">
               <Label>Title</Label>
@@ -128,8 +128,7 @@ export default function TaskDetailModal({
                     <SelectContent>
                       {STATUS_OPTIONS.map(opt => (
                         <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))
-                      }
+                      ))}
                     </SelectContent>
                   </Select>
                 ) : (
@@ -205,7 +204,7 @@ export default function TaskDetailModal({
                 )}
               </div>
 
-              {/* Add comment */}
+              {/* Add comment - always show for authenticated users */}
               {canComment && (
                 <div className="flex gap-2">
                   <Textarea
@@ -222,10 +221,10 @@ export default function TaskDetailModal({
               )}
             </div>
           </div>
-        </ScrollArea>
+        </div>
 
         {canEdit && (
-          <div className="flex justify-end gap-2 pt-4 border-t">
+          <div className="flex-shrink-0 flex justify-end gap-2 pt-4 border-t">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
             <Button onClick={handleSave}>Save Changes</Button>
           </div>
