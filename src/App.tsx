@@ -11,6 +11,7 @@ import ClientDashboard from "./pages/ClientDashboard";
 import Workspaces from "./pages/Workspaces";
 import WorkspaceDetail from "./pages/WorkspaceDetail";
 import ProjectBoard from "./pages/ProjectBoard";
+import Payments from "./pages/Payments";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/workspaces" element={<ProtectedRoute><Workspaces /></ProtectedRoute>} />
           <Route path="/workspaces/:workspaceId" element={<ProtectedRoute><WorkspaceDetail /></ProtectedRoute>} />
           <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectBoard /></ProtectedRoute>} />
+          <Route path="/payments" element={<ProtectedRoute allowedRoles={["admin", "employee"]}><Payments /></ProtectedRoute>} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>
