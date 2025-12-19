@@ -140,12 +140,12 @@ export default function TaskDetailModal({
               <div className="space-y-2">
                 <Label>Assigned To</Label>
                 {canEdit ? (
-                  <Select value={assignedTo} onValueChange={setAssignedTo}>
+                  <Select value={assignedTo || "unassigned"} onValueChange={(v) => setAssignedTo(v === "unassigned" ? "" : v)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Unassigned" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Unassigned</SelectItem>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
                       {employees.map(emp => (
                         <SelectItem key={emp.id} value={emp.id}>{emp.name}</SelectItem>
                       ))}
