@@ -125,7 +125,7 @@ export default function Workspaces() {
                       </SelectTrigger>
                       <SelectContent>
                         {clients.length === 0 ? (
-                          <SelectItem value="" disabled>No clients available</SelectItem>
+                          <div className="px-2 py-1.5 text-sm text-muted-foreground">No clients available</div>
                         ) : (
                           clients.map(client => (
                             <SelectItem key={client.id} value={client.id}>
