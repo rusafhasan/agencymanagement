@@ -5,7 +5,7 @@ import KanbanColumn from './KanbanColumn';
 import TaskDetailModal from './TaskDetailModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 
 interface KanbanBoardProps {
   projectId: string;
@@ -71,26 +71,38 @@ export default function KanbanBoard({ projectId, readOnly = false }: KanbanBoard
     }
   };
 
+  // Get fresh task data when modal opens
+  const getSelectedTaskWithComments = () => {
+    if (!selectedTask) return null;
+    const freshTask = tasks.find(t => t.id === selectedTask.id);
+    return freshTask || selectedTask;
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Add Task Button */}
       {canCreateTask && !readOnly && (
-        <div className="flex gap-2">
+        <div className="animate-fade-in">
           {isAddingTask ? (
-            <>
+            <div className="flex gap-3 max-w-md">
               <Input
-                placeholder="Task title..."
+                placeholder="Enter task title..."
                 value={newTaskTitle}
                 onChange={(e) => setNewTaskTitle(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAddTask()}
                 autoFocus
+                className="flex-1"
               />
-              <Button onClick={handleAddTask}>Add</Button>
-              <Button variant="outline" onClick={() => setIsAddingTask(false)}>Cancel</Button>
-            </>
+              <Button onClick={handleAddTask} disabled={!newTaskTitle.trim()}>
+                Add Task
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => { setIsAddingTask(false); setNewTaskTitle(''); }}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           ) : (
-            <Button onClick={() => setIsAddingTask(true)}>
-              <Plus className="h-4 w-4 mr-2" />
+            <Button onClick={() => setIsAddingTask(true)} className="gap-2 shadow-premium-sm hover:shadow-premium-md transition-shadow">
+              <Plus className="h-4 w-4" />
               Add Task
             </Button>
           )}
@@ -98,27 +110,28 @@ export default function KanbanBoard({ projectId, readOnly = false }: KanbanBoard
       )}
 
       {/* Kanban Columns */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {COLUMNS.map(column => (
-          <KanbanColumn
-            key={column.status}
-            title={column.title}
-            status={column.status}
-            tasks={getTasksByStatus(column.status)}
-            employees={employees}
-            onTaskClick={setSelectedTask}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
-            draggedTaskId={draggedTask?.id || null}
-          />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        {COLUMNS.map((column, i) => (
+          <div key={column.status} className="animate-fade-in" style={{ animationDelay: `${0.1 + i * 0.05}s` }}>
+            <KanbanColumn
+              title={column.title}
+              status={column.status}
+              tasks={getTasksByStatus(column.status)}
+              employees={employees}
+              onTaskClick={setSelectedTask}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+              draggedTaskId={draggedTask?.id || null}
+            />
+          </div>
         ))}
       </div>
 
       {/* Task Detail Modal */}
       {selectedTask && (
         <TaskDetailModal
-          task={selectedTask}
+          task={getSelectedTaskWithComments()!}
           comments={getCommentsForTask(selectedTask.id)}
           employees={employees}
           isOpen={!!selectedTask}
